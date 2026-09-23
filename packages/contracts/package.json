@@ -1,0 +1,18 @@
+{
+  "name": "@chronos/contracts",
+  "version": "1.0.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "echo 'no build step'",
+    "lint": "echo 'no lint'",
+    "typecheck": "echo 'no typecheck'",
+    "test": "echo 'no test'"
+  },
+  "devDependencies": {},
+  "dependencies": {},
+  "engines": { "node": ">=26.0.0" }
+}
