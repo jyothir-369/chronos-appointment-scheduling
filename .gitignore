@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Next.js
+.next/
+out/
+
+# NestJS / build output
+dist/
+coverage/
+
+# Testing
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+# Temporary files
+tmp/
+temp/
+
+# Runtime data
+*.pid
+*.seed
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Redis / local infrastructure
+redis-data/
+
+# Local Docker data
+.docker/
+
+# Turbo
+.turbo/
+
+# Misc
+*.tsbuildinfo
