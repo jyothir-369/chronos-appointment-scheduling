@@ -5,17 +5,40 @@
   "type": "module",
   "exports": { ".": "./dist/main.js" },
   "scripts": {
-    "build": "echo 'Phase 0: stub build'",
-    "dev": "echo 'Phase 0: stub dev entry'",
-    "lint": "echo 'no lint rules yet'",
-    "typecheck": "echo 'no TS yet'",
-    "test": "echo 'Phase 0: no API tests'"
+    "build": "tsc --build",
+    "dev": "ts-node-dev src/main.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --reporter=verbose",
+    "test:unit": "vitest run --reporter=verbose --run"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.0",
     "@nestjs/core": "^12.0.0",
-    "@nestjs/platform-express": "^12.0.0"
+    "@nestjs/platform-express": "^12.0.0",
+    "@nestjs/microservices": "^12.0.0",
+    "@nestjs/bullmq": "^12.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
+    "express-rate-limit": "^7.1.5",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.2",
+    "pg": "^8.11.0",
+    "@chronos/time": "workspace:*",
+    "@chronos/db": "workspace:*",
+    "@chronos/contracts": "workspace:*"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@nestjs/testing": "^12.0.0",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
   "engines": { "node": ">=26.0.0" }
 }
