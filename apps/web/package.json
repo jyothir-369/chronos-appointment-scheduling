@@ -4,13 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "echo 'Phase 0: stub web server'",
-    "build": "echo 'Phase 0: stub web build'",
+    "dev": "next dev",
+    "build": "next build",
     "test": "echo 'Phase 0: stub web tests'"
   },
   "dependencies": {
     "next": "16.3.0"
   },
-  "devDependencies": {},
-  "engines": { "node": ">=26.0.0" }
+  "engines": {
+    "node": ">=26.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
+  }
 }
