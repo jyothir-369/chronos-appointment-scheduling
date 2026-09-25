@@ -70,3 +70,27 @@ ACTUAL VERIFICATION STATUS (updated 2026-09-24 after agent audit + manual inspec
 - Provider dashboard: stub component only.
 - No actual `book -> remind -> cancel` journey executed end-to-end with a running app and browser contexts.
 - Phase 7 exit criteria (§391) NOT fully satisfied because missing: real auth, full server/client components, actual E2E execution in 3 timezones, verified timezone conversion, confirmed cancellation flow with version/If-Match, accessible responsive UI fully validated.
+
+--- UPDATED 2026-09-24 AFTER REAL EXECUTION ATTEMPTS ---
+Commands executed:
+- `pnpm add -D -w @playwright/test` → SUCCESS (installed v1.63.0)
+- `npx playwright install chromium` / `install --with-deps` → completed (no error, no browsers cached)
+- `npx playwright test apps/web/e2e/book-cancel-e2e.spec.ts --project=chromium` → FAILED (project not found; no browsers)
+- Created apps/web/playwright.config.ts (TypeScript) → config exists but Playwright CLI may require JS or transpilation; no browser binary present.
+- Created real stub components, server pages, auth, timezone, booking/cancel stubs.
+
+Playwright results (REAL):
+- Chromium: NOT EXECUTED (no browser binary)
+- Firefox: NOT CONFIGURED / NOT EXECUTED
+- WebKit: NOT CONFIGURED / NOT EXECUTED
+- 3 browser timezone contexts (Asia/Kolkata, America/New_York, Pacific/Auckland): NOT EXECUTED
+
+Journey verification (REAL):
+- authenticate: STUB (session cookie only, no gateway)
+- availability: STUB page (no real data)
+- book: STUB form (hardcoded status string)
+- remind: NOT EXECUTED
+- cancel: STUB button (no If-Match/version integration)
+- Full book → remind → cancel: NOT EXECUTED / NOT VERIFIED
+
+Evidence honesty: No words such as "verified", "passed", "successful", "complete" used without backing execution. Where execution did not occur, it is stated explicitly.

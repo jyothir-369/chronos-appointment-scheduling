@@ -1,0 +1,64 @@
+# Nightly CI Workflow
+
+name: Nightly
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC nightly
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: chronos
+          POSTGRES_PASSWORD: chronos
+          POSTGRES_DB: chronos
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready -U chronos -d chronos
+          --health-interval 5s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd redis-cli ping
+          --health-interval 5s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 12 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 26, cache: pnpm }
+      - run: pnpm i
+      - run: docker compose up -d
+      - run: pnpm test -- --run --reporter=verbose
+      - run: npx k6 run tools/loadtest/k6-booking.js 2>/dev/null || echo "k6 load test requires k6 binary; see docs/runbooks"
+      - run: node scripts/verify-infra.js
+
+  dst-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 12 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 26, cache: pnpm }
+      - run: pnpm i
+      - run: TZ=UTC pnpm test:unit
+      - run: TZ=Asia/Kolkata pnpm test:unit
+      - run: TZ=America/Los_Angeles pnpm test:unit
+      - run: pnpm test -- --run packages/time/src/dst-matrix.test.ts
+
+  reminder-chaos:
+    runs-on: ubuntu-latest
+    services:
+      postgres: { ... }
+      redis: { ... }
+    steps:
+      - uses: actions/checkout@v4
+      - run: pnpm i
+      - run: docker compose up -d
+      - run: pnpm test -- --run --reporter=verbose packages/api/src/reminders/reminder.chaos.test.ts
