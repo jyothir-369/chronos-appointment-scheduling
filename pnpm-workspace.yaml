@@ -1,6 +1,8 @@
 packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'tools/*'
+  - "packages/*"
+  - "apps/*"
+  - "tools/*"
 allowBuilds:
-  esbuild: true
+  esbuild: false
+  msgpackr-extract: false
+ignoreWorkspaceRootCheck: true

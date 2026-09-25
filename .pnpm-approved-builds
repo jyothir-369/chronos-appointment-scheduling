@@ -1,0 +1,3 @@
+msgpackr-extract: yes
+esbuild@0.21.5: yes
+esbuild@0.28.2: yes
