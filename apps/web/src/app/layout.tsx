@@ -35,7 +35,7 @@ export default function RootLayout({
         <footer className="border-t border-slate-200 bg-white" role="contentinfo">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 text-sm text-slate-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <span>Chronos — Timezone-Safe Appointment Scheduling</span>
-            <span>Backend: <a href="http://localhost:3001/health" className="underline hover:text-blue-600" target="_blank" rel="noopener noreferrer">localhost:3001</a></span>
+            <span>Backend: <a href="http://localhost:3003/health" className="underline hover:text-blue-600" target="_blank" rel="noopener noreferrer">localhost:3003</a></span>
           </div>
         </footer>
       </body>

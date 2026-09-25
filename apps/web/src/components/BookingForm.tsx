@@ -15,8 +15,8 @@ export default function BookingForm({ slotId, providerId = "seeded-provider-001"
       const res = await apiFetch("/bookings", {
         method: "POST",
         body: JSON.stringify({
-          slotId: slotId || "demo-slot-001",
-          clientId: "user-1",
+          slotId: slotId || "",
+          clientId: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21",
           clientTimezone: "UTC",
           idempotencyKey: key,
         }),
@@ -50,7 +50,7 @@ export default function BookingForm({ slotId, providerId = "seeded-provider-001"
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold">Book appointment</h3>
-          <span className="text-xs font-medium text-slate-400">Slot: {slotId || "demo-slot-001"}</span>
+          <span className="text-xs font-medium text-slate-400">Slot: {slotId || "none selected"}</span>
         </div>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <label htmlFor="client-tz" className="block font-medium text-slate-700">Timezone</label>

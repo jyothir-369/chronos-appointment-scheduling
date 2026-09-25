@@ -45,14 +45,14 @@ export default async function HomePage() {
       <section aria-label="Availability" className="grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <h2 className="text-2xl font-bold tracking-tight">Available slots</h2>
-          <p className="text-slate-500">Real data from the backend at <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">localhost:3001</code>.</p>
+          <p className="text-slate-500">Real data from the backend at <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">localhost:3003</code>.</p>
           {error ? <div className="mt-4 rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3" role="alert">{error}</div> : null}
           <div className="mt-4 grid sm:grid-cols-2 gap-4">
             {slots.map((s: any) => (
               <article key={String(s.slot_start_utc)} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-slate-900">Provider: Demo</h3>
+                    <h3 className="font-bold text-slate-900">Provider: Dr. Chronos Test Provider</h3>
                     <p className="text-sm text-slate-500">{s.display_tz || "UTC"}</p>
                   </div>
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.status === "open" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-600"}`} aria-label={`Status ${s.status}`}>{s.status}</span>

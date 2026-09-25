@@ -34,7 +34,7 @@ export default async function BookPage() {
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-500">No open slots available.</div>
         )}
       </section>
-      <BookingForm slotId={firstSlot ? firstSlot.slot_start_utc : "demo-slot-001"} />
+      <BookingForm slotId={firstSlot ? firstSlot.slot_start_utc : undefined} />
     </div>
   );
 }

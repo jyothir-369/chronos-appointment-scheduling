@@ -6,7 +6,7 @@ export default async function MyBookingsPage() {
   let bookings: any[] = [];
   let error = "";
   try {
-    const res = await apiFetch("/bookings" + (process.env.NEXT_PUBLIC_API_URL ? "" : "")); // best-effort; backend may not expose GET /bookings fully
+    const res = await apiFetch("/bookings"); // best-effort; backend may not expose GET /bookings fully
     if (res.ok) bookings = await res.json();
   } catch {
     error = "We couldn't load your bookings.";
