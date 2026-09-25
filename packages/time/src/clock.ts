@@ -6,7 +6,7 @@
 
 // Import module that uses globalThis.Temporal with polyfill fallback
 // (ADR-001 decision: native on Node 26, polyfill on Node 24)
-let Temporal: typeof globalThis.Temporal | undefined;
+let Temporal: any;
 try {
   // Prefer native global
   Temporal = (globalThis as any).Temporal;
