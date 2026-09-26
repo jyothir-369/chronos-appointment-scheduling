@@ -1,21 +1,10 @@
-import { z } from 'nestjs-zod/z';
-import { createZodDto } from 'nestjs-zod';
+
 
 // Import shared contracts
-import { ErrorCodes, ErrorCode, type UUID, type Timezone, type ISO8601UTC, type BookingStatus, type ReminderJobStatus } from '@chronos/contracts';
+import { ErrorCodes, ErrorCode, type UUID, type Timezone, type ISO8601UTC, type BookingStatus } from '@chronos/contracts';
 
 // ========== Reminder Job Types ==========
 
-export const ReminderJobStatusSchema = z.nativeEnum({
-  SCHEDULED: 'scheduled',
-  SENDING: 'sending',
-  SENT: 'sent',
-  CANCELLED: 'cancelled',
-  SKIPPED: 'skipped',
-  FAILED: 'failed',
-});
-
-export type ReminderJobStatus = z.infer<typeof ReminderJobStatusSchema>;
 
 // ========== Reminder Job Database Model ==========
 
@@ -24,7 +13,7 @@ export interface ReminderJob {
   bookingId: UUID;
   offsetMinutes: number;
   fireAtUtc: ISO8601UTC;
-  status: ReminderJobStatus;
+  status: string;
   attempts: number;
   lockedUntil?: ISO8601UTC | null;
   sentAt?: ISO8601UTC | null;
@@ -36,13 +25,11 @@ export interface ReminderJob {
 
 // ========== Reminder Job Creation ==========
 
-export const createReminderJobSchema = z.object({
-  bookingId: z.string().uuid(),
-  offsetMinutes: z.number().int(),
-  fireAtUtc: z.string().datetime(),
-});
-
-export type CreateReminderJobDto = z.infer<typeof createReminderJobSchema>;
+export interface CreateReminderJobDto {
+  bookingId: UUID;
+  offsetMinutes: number;
+  fireAtUtc: string;
+}
 
 // ========== Worker Claim ==========
 
@@ -144,4 +131,4 @@ export class NetworkError extends ReminderError {
     super(message, 'TRANSIENT', 503);
     this.name = 'NetworkError';
   }
-}
+}export { ReminderJobStatus } from "@chronos/contracts";

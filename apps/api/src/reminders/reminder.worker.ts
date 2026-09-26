@@ -12,8 +12,8 @@ import { lastValueFrom } from 'rxjs';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-import { ReminderJobStatus, ReminderJob } from './reminder.types';
-import { ReminderError, NetworkError, ProviderError } from './reminder.types';
+import { ReminderJobStatus, ReminderJob } from './reminder.types.js';
+import { ReminderError, NetworkError, ProviderError } from './reminder.types.js';
 
 const RETRY_BACKOFF = {
   type: 'exponential',
