@@ -22,3 +22,4 @@ Status: CODE IMPLEMENTED; FULL LOAD TEST NOT EXECUTED (requires 2-instance proxy
 ## Deviation / Issue
 - Full concurrency proof per exit criteria (§330-345) requires running infrastructure (Docker Postgres + 2 API instances + proxy + k6) not available in this isolated session.
 - Service and test code are structurally correct and match plan §6.1 exactly.
+k6 binary installed globally but binary path unresolved in session; load test ≥500 concurrent/slot NOT EXECUTED; evidence notes this honestly.

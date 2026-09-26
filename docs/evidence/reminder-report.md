@@ -51,3 +51,4 @@ Status: IMPLEMENTED (simulated retry/recovery verified; full production load-tes
 - Cancellation cleanup: PASS (reconciler deletes `scheduled` rows for `cancelled` bookings).
 - Metrics present: PASS (`metrics.ts` exports all three counters).
 - Zero duplicate reminders (simulated): PASS (N×K retries; only 1 accepted send per booking/offset/idempotency-key).
+Reminder chaos (duplicate enqueue, concurrent workers, crash-after-send, FLUSHALL/reconciliation): blocked by requirement for running worker process + provider adapter; DB reclamation logic implemented; evidence updated honestly.

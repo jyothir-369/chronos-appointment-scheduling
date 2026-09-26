@@ -94,3 +94,4 @@ Journey verification (REAL):
 - Full book → remind → cancel: NOT EXECUTED / NOT VERIFIED
 
 Evidence honesty: No words such as "verified", "passed", "successful", "complete" used without backing execution. Where execution did not occur, it is stated explicitly.
+Playwright browsers: installed via 'pnpm add -D @playwright/test'; actual browser installation ('npx playwright install') started but not confirmed complete; real E2E in 3 timezones not executed; evidence updated honestly.
