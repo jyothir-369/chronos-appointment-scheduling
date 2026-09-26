@@ -3,7 +3,7 @@
  * Pure functions, zero I/O. Only module importing Temporal / polyfill.
  */
 
-const T = (globalThis as any).Temporal;
+const T: any = (globalThis as any).Temporal;
 
 export interface Slot {
   startUtc: string; // ISO 8601 UTC
