@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./dist/main.js" },
+  "exports": {
+    ".": "./dist/main.js"
+  },
   "scripts": {
     "build": "tsc --build",
     "dev": "ts-node-dev src/main.ts",
@@ -13,20 +15,25 @@
     "test:unit": "vitest run --reporter=verbose --run"
   },
   "dependencies": {
+    "@chronos/contracts": "workspace:*",
+    "@chronos/db": "workspace:*",
+    "@chronos/time": "workspace:*",
+    "@nestjs/bullmq": "^12.0.0",
     "@nestjs/common": "^12.0.0",
     "@nestjs/core": "^12.0.0",
-    "@nestjs/platform-express": "^12.0.0",
     "@nestjs/microservices": "^12.0.0",
-    "@nestjs/bullmq": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.0",
+    "@nestjs/typeorm": "^12.0.1",
+    "bullmq": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "express-rate-limit": "^7.1.5",
-    "bullmq": "^5.0.0",
     "ioredis": "^5.3.2",
+    "nestjs-zod": "^5.5.0",
     "pg": "^8.11.0",
-    "@chronos/time": "workspace:*",
-    "@chronos/db": "workspace:*",
-    "@chronos/contracts": "workspace:*"
+    "rxjs": "^7.8.2",
+    "typeorm": "^1.1.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@nestjs/testing": "^12.0.0",
@@ -40,5 +47,7 @@
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
-  "engines": { "node": ">=26.0.0" }
+  "engines": {
+    "node": ">=26.0.0"
+  }
 }

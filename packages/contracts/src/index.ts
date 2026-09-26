@@ -256,18 +256,6 @@ export function validateUuid(id: string): void {
 
 export function validateTimezone(tz: string): void {
   if (!timezoneSchema.safeParse(tz).success) {
-    throw new Error(`Invalid timezone: ${tz}`);
-  }
 }
-
-export function ensureUtcInstant(date: Date): ISO8601UTC {
-  return date.toISOString();
-}
-
-export function parseCancelRequest(raw: any): CancelRequest {
-  const parsed = cancelRequestSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(`Invalid cancel request: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')}`);
-  }
-  return parsed.data;
+  throw new Error('Invalid timezone: ' + id);
 }
