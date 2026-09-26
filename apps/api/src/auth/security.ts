@@ -4,7 +4,8 @@
  */
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
-import { logStructured } from './observability/logger.ts';
+
+function logStructured(level: string, msg: string, ctx?: any) { console.log(level, msg, ctx); }
 
 const apiLimiter = rateLimit({
   windowMs: 60_000, // 1 minute
