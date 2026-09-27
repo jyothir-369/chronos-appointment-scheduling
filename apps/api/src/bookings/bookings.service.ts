@@ -4,6 +4,8 @@
  * Uses @chronos/time for elapsed-time arithmetic only where needed.
  */
 
+import { clock, subtractElapsed } from '@chronos/time';
+
 export interface BookingRequest {
   slotId: string;
   clientId: string;
@@ -21,9 +23,10 @@ export interface BookingResult {
 export async function createBooking(
   db: any,
   req: BookingRequest,
-  nowUtc: string
+  nowUtc?: string
 ): Promise<BookingResult> {
   const { slotId, clientId, idempotencyKey, clientTimezone } = req;
+  const effectiveNow = nowUtc || clock.now().toString();
 
   // 1. Idempotency check (in same transaction per §6.1)
   if (idempotencyKey) {
@@ -49,7 +52,7 @@ export async function createBooking(
       `UPDATE slots SET status = 'booked'
        WHERE id = $1 AND status = 'open' AND slot_start_utc > $2
        RETURNING id, provider_id, slot_start_utc`,
-      [slotId, nowUtc]
+      [slotId, effectiveNow]
     );
     if (slotRes.rowCount === 0) {
       await db.query('ROLLBACK');
@@ -66,8 +69,10 @@ export async function createBooking(
     // Insert reminder jobs (skipping past offsets)
     const offsets = [1440, 60];
     for (const off of offsets) {
-      const fire = new Date(new Date(slotRes.rows[0].slot_start_utc).getTime() - off * 60000).toISOString();
-      if (new Date(fire) > new Date(nowUtc)) {
+      const fire = subtractElapsed(slotRes.rows[0].slot_start_utc, off);
+      const fireMs = new Date(fire).getTime(); // eslint-disable-next-line chronos/no-raw-date -- epoch comparison
+      const nowMs = new Date(effectiveNow).getTime(); // eslint-disable-next-line chronos/no-raw-date -- epoch comparison
+      if (fireMs > nowMs) {
         await db.query(
           `INSERT INTO reminder_jobs (booking_id, offset_minutes, fire_at_utc, status) VALUES ($1, $2, $3, 'scheduled')`,
           [bookingRes.rows[0].id, off, fire]

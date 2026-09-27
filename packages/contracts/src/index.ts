@@ -170,7 +170,8 @@ export const bookingRequestSchema = z.object({
   slotId: uuidSchema,
   clientId: uuidSchema,
   clientTimezone: timezoneSchema,
-  idempotencyKey: z.string().min(1).max(255).optional(),
+  // Use Clock / Temporal, not Date.now() or Math.random()
+  idempotencyKey: z.string().refine((s) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s), { message: 'Must be crypto.randomUUID() format' }).optional(),
 });
 
 // Cancel request
@@ -256,6 +257,6 @@ export function validateUuid(id: string): void {
 
 export function validateTimezone(tz: string): void {
   if (!timezoneSchema.safeParse(tz).success) {
-}
-  throw new Error('Invalid timezone: ' + id);
+    throw new Error('Invalid timezone: ' + tz);
+  }
 }

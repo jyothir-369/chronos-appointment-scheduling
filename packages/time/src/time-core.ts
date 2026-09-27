@@ -115,7 +115,7 @@ export function generateSlots({
   let d = from;
   for (;;) {
     const [yyyy, mm, dd] = d.toString().split('-').map(Number);
-    const dow = new Date(Date.UTC(yyyy, mm - 1, dd)).getUTCDay() || 7;
+    const dow = new Date(Date.UTC(yyyy, mm - 1, dd)).getUTCDay() || 7; // eslint-disable-next-line chronos/no-raw-date -- day-of-week bucketing only
     if (!rules?.daysOfWeek || rules.daysOfWeek.includes(dow)) {
       const startTimeStr = rules?.startTime ?? '09:00';
       const endTimeStr = rules?.endTime ?? '17:00';

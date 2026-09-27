@@ -1,11 +1,15 @@
 "use client";
 import { useState, useCallback } from "react";
 import { apiFetch } from "../lib/api";
+import { getSession } from "../lib/auth";
 
 export default function BookingForm({ slotId, providerId = "seeded-provider-001" }: { slotId?: string; providerId?: string }) {
+  const session = getSession();
+  const clientId = session?.userId || "";
   const [status, setStatus] = useState<"idle" | "pending" | "201" | "409" | "412" | "403" | "error">("idle");
   const [msg, setMsg] = useState("");
-  const [key, setKey] = useState(() => `idemp-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  // Replace Date.now() + Math.random() with crypto.randomUUID()
+  const [key] = useState(() => crypto.randomUUID());
 
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -16,7 +20,7 @@ export default function BookingForm({ slotId, providerId = "seeded-provider-001"
         method: "POST",
         body: JSON.stringify({
           slotId: slotId || "",
-          clientId: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21",
+          clientId,
           clientTimezone: "UTC",
           idempotencyKey: key,
         }),
@@ -43,7 +47,7 @@ export default function BookingForm({ slotId, providerId = "seeded-provider-001"
       setStatus("error");
       setMsg("Network error. Please try again.");
     }
-  }, [slotId, key]);
+  }, [slotId, key, clientId]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" aria-label="Booking form">
