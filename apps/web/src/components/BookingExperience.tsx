@@ -14,7 +14,7 @@ function SlotGroup({ label, slots }: { label: string; slots: any[] }) {
           <button
             key={s.slot_id}
             onClick={() => (window as any).onSlotSelect?.(s)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm hover:border-blue-600 hover:text-blue-700 transition"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm hover:border-blue-600 hover:text-blue-700 transition hover:scale-[1.03] active:scale-[0.98]"
             aria-label={`Book ${s.slot_start_utc}`}
           >
             {new Date(s.slot_start_utc).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: s.display_tz || "UTC" })}

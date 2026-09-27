@@ -203,6 +203,23 @@ export const rescheduleRequestSchema = z.object({
   cancellationWindowHours: z.number().int().min(0).optional(),
 });
 
+export const waitlistEntrySchema = z.object({
+  id: uuidSchema,
+  providerId: uuidSchema,
+  clientId: uuidSchema,
+  desiredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  desiredServiceId: uuidSchema.optional(),
+  notifiedAt: isoUTCStringSchema.nullable().optional(),
+});
+
+export const blockedPeriodSchema = z.object({
+  id: uuidSchema,
+  providerId: uuidSchema,
+  rangeStartUtc: isoUTCStringSchema,
+  rangeEndUtc: isoUTCStringSchema,
+  reason: z.string().optional(),
+});
+
 export const providerUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   timezone: timezoneSchema.optional(),
