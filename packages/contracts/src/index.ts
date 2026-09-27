@@ -131,6 +131,15 @@ export const bookingSchema = z.object({
 });
 
 // Slot schema (partial)
+export const serviceSchema = z.object({
+  id: uuidSchema,
+  providerId: uuidSchema,
+  name: z.string().min(1),
+  durationMinutes: z.number().int().min(5).max(240),
+  bufferMinutes: z.number().int().min(0).default(0),
+  priceCents: z.number().int().nullable().optional(),
+});
+
 export const slotSchema = z.object({
   id: uuidSchema,
   providerId: uuidSchema,
@@ -185,6 +194,15 @@ export const cancelRequestSchema = z.object({
 });
 
 // Provider update
+export const rescheduleRequestSchema = z.object({
+  bookingId: uuidSchema,
+  newSlotId: uuidSchema,
+  idempotencyKey: z.string().refine((s) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s), { message: 'Must be crypto.randomUUID() format' }).optional(),
+  version: z.number().int().positive(),
+  ifMatch: z.number().int().positive(),
+  cancellationWindowHours: z.number().int().min(0).optional(),
+});
+
 export const providerUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   timezone: timezoneSchema.optional(),

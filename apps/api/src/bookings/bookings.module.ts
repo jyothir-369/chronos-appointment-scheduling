@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 import { clock, subtractElapsed, reminderFireTimes } from '@chronos/time';
 import { createBooking } from './bookings.service.js';
 import { evaluateCancellation } from './lifecycle.service.js';
+import { rescheduleBooking } from './reschedule.service.js';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://chronos:chronos@localhost:5433/chronos' });
 
@@ -45,6 +46,26 @@ export class BookingsController {
       slot_start_utc: r.slot_start_utc,
       slot_end_utc: r.slot_end_utc,
     }));
+  }
+
+  @Post(':id/reschedule')
+  async rescheduleBooking(@Param('id') id: string, @Body() body: any, @Headers('cookie') cookie?: string) {
+    const sessionClientId = extractClientFromCookie(cookie);
+    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    // Verify ownership
+    const res = await pool.query('SELECT client_id FROM bookings WHERE id = $1', [id]);
+    if (res.rowCount === 0) return { status: 404, error: 'not_found' };
+    if (res.rows[0].client_id !== sessionClientId) return { status: 403, error: 'unauthorized' };
+
+    const result = await rescheduleBooking(pool, {
+      bookingId: id,
+      newSlotId: body.newSlotId,
+      idempotencyKey: body.idempotencyKey,
+      version: body.version,
+      ifMatch: body.ifMatch,
+      cancellationWindowHours: body.cancellationWindowHours,
+    }, clock.now().toString());
+    return result;
   }
 
   @Post(':id/cancel')
