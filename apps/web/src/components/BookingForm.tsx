@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { apiFetch } from "../lib/api";
 import { getSession } from "../lib/auth";
+import { mapApiError } from "../lib/error-map";
 
 export default function BookingForm({ slotId, providerId = "seeded-provider-001" }: { slotId?: string; providerId?: string }) {
   const session = getSession();
@@ -41,7 +42,7 @@ export default function BookingForm({ slotId, providerId = "seeded-provider-001"
       } else {
         const body = await res.json().catch(() => ({}));
         setStatus("error");
-        setMsg(body.error || `Error ${res.status}`);
+        setMsg(mapApiError(res.status, body.error));
       }
     } catch (err: any) {
       setStatus("error");
