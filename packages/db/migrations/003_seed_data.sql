@@ -10,7 +10,7 @@ VALUES (
   24,
   ARRAY[1440, 60]
 )
-ON CONFLICT (name) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO clients (id, email, name)
 VALUES (
