@@ -1,67 +1,50 @@
 @import "tailwindcss";
 
 @theme {
-  /* Spacing scale from design tokens */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-
-  /* Radius scale */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-full: 9999px;
-
-  /* Accent and semantic colors */
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-success: #059669;
-  --color-success-bg: #ecfdf5;
-  --color-warning: #d97706;
-  --color-warning-bg: #fffbeb;
-  --color-danger: #dc2626;
-  --color-danger-bg: #fef2f2;
-  --color-info: #2563eb;
-
-  /* Typography tokens */
-  --font-heading: "Instrument Serif", Georgia, serif;
-  --font-numerals: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --color-brand-50: #eef2ff;
+  --color-brand-600: #6366f1;
+  --color-brand-900: #312e81;
 }
 
-/* Token-based dark mode (CSS variable approach per §3.1 / shadcn) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-page: #0b0f19;
-    --bg-card: #111827;
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --border-subtle: #1f2937;
+html { font-family: "Inter", system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+@theme {
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-slate-850: #151f32;
+  --color-slate-950: #0b0f19;
+}
+
+@layer base {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(156,163,175,.4); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(156,163,175,.6); }
+
+  html { @apply h-full; }
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased transition-colors duration-200 font-sans h-full;
+    font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   }
+  .dark body { @apply bg-slate-950 text-slate-100; }
+
+  [x-cloak] { display: none !important; }
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-page: #f9fafb;
-    --bg-card: #ffffff;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --border-subtle: #e5e7eb;
+@layer utilities {
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
-}
-
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  font-family: var(--font-body);
-  background-color: var(--bg-page);
-  color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  .text-balance { text-wrap: balance; }
 }
