@@ -2,6 +2,8 @@
  * Reschedule endpoint (§2.2) — atomic cancel + rebook in one transaction
  */
 import { Pool } from 'pg';
+// Type-only import preserved for ESM
+import type { Pool as PgPool } from 'pg';
 import { clock, subtractElapsed } from '@chronos/time';
 
 export interface RescheduleRequest {
@@ -14,7 +16,7 @@ export interface RescheduleRequest {
 }
 
 export interface RescheduleResult {
-  status: 201 | 404 | 409 | 412 | 422;
+  status: 201 | 400 | 404 | 409 | 412 | 422;
   bookingId?: string;
   error?: string;
   replay?: boolean;

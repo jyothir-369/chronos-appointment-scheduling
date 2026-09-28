@@ -1,17 +1,1 @@
-{
-  "name": "@chronos/db",
-  "version": "1.0.0",
-  "private": false,
-  "type": "module",
-  "exports": {
-    ".": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "echo 'migrations in sql/'",
-    "lint": "echo 'no lint'",
-    "test": "echo 'no test yet'"
-  },
-  "devDependencies": {},
-  "dependencies": {},
-  "engines": { "node": ">=26.0.0" }
-}
+{"name":"@chronos/db","version":"1.0.0","private":false,"type":"module","exports":{".":"./dist/index.js","./migrate":"./dist/migrate.js"},"scripts":{"build":"node scripts/build-migrate.js","migrate":"node dist/migrate.js","lint":"echo no lint","test":"echo no test yet"},"dependencies":{"pg":"^8.23.0"},"engines":{"node":">=26.0.0"}}

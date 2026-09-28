@@ -81,5 +81,12 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 
 -- Exclusion constraint: no overlapping slots per provider (defence-in-depth per F2)
 CREATE EXTENSION IF NOT EXISTS btree_gist;
-ALTER TABLE slots ADD CONSTRAINT IF NOT EXISTS slots_no_overlap
-  EXCLUDE USING gist (provider_id WITH =, tstzrange(slot_start_utc, slot_end_utc, '[)') WITH &&);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'slots_no_overlap' AND conrelid = 'slots'::regclass
+  ) THEN
+    ALTER TABLE slots ADD CONSTRAINT slots_no_overlap
+      EXCLUDE USING gist (provider_id WITH =, tstzrange(slot_start_utc, slot_end_utc, '[)') WITH &&);
+  END IF;
+END $$;

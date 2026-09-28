@@ -10,7 +10,7 @@ export default async function ProviderDashboardPage() {
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wide text-slate-400">Provider</h3>
           <p className="font-bold text-lg">Demo Provider</p>
-          <p className="text-sm text-slate-500">seeded-provider-001</p>
+          <p className="text-sm text-slate-500">a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11</p>
         </div>
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wide text-slate-400">Timezone</h3>

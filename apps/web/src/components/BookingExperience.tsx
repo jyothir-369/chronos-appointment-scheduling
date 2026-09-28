@@ -37,7 +37,7 @@ function SkeletonSlotList() {
   );
 }
 
-export default function BookingExperience({ providerId = "seeded-provider-001" }: { providerId?: string }) {
+export default function BookingExperience({ providerId = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" }: { providerId?: string }) {
   const session = getSession();
   const clientId = session?.userId || "";
   const [status, setStatus] = useState<"idle" | "loading" | "reserved" | "conflict" | "error">("idle");
