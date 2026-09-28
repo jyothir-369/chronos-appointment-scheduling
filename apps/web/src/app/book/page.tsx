@@ -5,7 +5,7 @@ import BookingForm from "../../components/BookingForm";
 export default async function BookPage() {
   let slots: any[] = [];
   try {
-    const res = await apiFetch("/providers/seeded-provider-001/availability");
+    const res = await apiFetch("/providers/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/availability");
     if (res.ok) slots = await res.json();
   } catch {}
 

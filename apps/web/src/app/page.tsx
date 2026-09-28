@@ -1,5 +1,6 @@
 import { apiFetch } from "../lib/api";
 import { cookies } from "next/headers";
+import PageShell from "../components/PageShell";
 import TimeDisplay from "../components/TimeDisplay";
 
 export default async function HomePage() {
@@ -15,7 +16,7 @@ export default async function HomePage() {
   let slots: any[] = [];
   let error = "";
   try {
-    const res = await apiFetch("/providers/seeded-provider-001/availability");
+    const res = await apiFetch("/providers/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/availability");
     if (res.ok) slots = await res.json();
     else error = "Could not load availability";
   } catch (e: any) {
@@ -23,6 +24,7 @@ export default async function HomePage() {
   }
 
   return (
+    <PageShell>
     <div className="space-y-10">
       <section aria-label="Hero" className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-900 text-white shadow-2xl">
         <div className="absolute inset-0 opacity-10" aria-hidden="true">
@@ -79,5 +81,6 @@ export default async function HomePage() {
         </aside>
       </section>
     </div>
+  </PageShell>
   );
 }

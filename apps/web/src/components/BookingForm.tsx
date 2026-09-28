@@ -4,7 +4,7 @@ import { apiFetch } from "../lib/api";
 import { getSession } from "../lib/auth";
 import { mapApiError } from "../lib/error-map";
 
-export default function BookingForm({ slotId, providerId = "seeded-provider-001" }: { slotId?: string; providerId?: string }) {
+export default function BookingForm({ slotId, providerId = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" }: { slotId?: string; providerId?: string }) {
   const session = getSession();
   const clientId = session?.userId || "";
   const [status, setStatus] = useState<"idle" | "pending" | "201" | "409" | "412" | "403" | "error">("idle");
