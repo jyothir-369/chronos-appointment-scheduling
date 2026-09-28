@@ -1,4 +1,5 @@
 import { apiFetch } from "../../lib/api";
+import { ClassicTabs } from "../../components/ui/ClassicTabs";
 import TimeDisplay from "../../components/TimeDisplay";
 import CancelButton from "../../components/CancelButton";
 
