@@ -14,14 +14,14 @@ export interface RescheduleRequest {
 }
 
 export interface RescheduleResult {
-  status: 201 | 400 | 404 | 409 | 412 | 422;
+  status: 201 | 404 | 409 | 412 | 422;
   bookingId?: string;
   error?: string;
   replay?: boolean;
 }
 
 export async function rescheduleBooking(
-  pool: InstanceType<typeof Pool>,
+  pool: Pool,
   req: RescheduleRequest,
   nowUtc?: string
 ): Promise<RescheduleResult> {

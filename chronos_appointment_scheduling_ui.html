@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en" x-data="chronosApp()" :class="{ 'dark': darkMode }" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos | Modern SaaS Appointment Scheduling Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1', // Primary Indigo Accent
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                        slate: {
+                            850: '#151f32',
+                            950: '#0b0f19',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+    <style>
+        /* Custom smooth scrollbar & utilities */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.6); }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 transform md:translate-x-0 md:static md:inset-0"
+               :class="mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            
+            <!-- Logo & Workspace Selector -->
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-lg">
+                        <i class="fa-solid font-mono text-sm"><i class="fa-solid fa-clock"></i></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-900 dark:text-white tracking-tight leading-none text-base">Chronos</h1>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Pro Workspace</span>
+                    </div>
+                </div>
+                <button @click="mobileSidebarOpen = false" class="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Workspace Switcher Pill -->
+            <div class="px-3 pt-3">
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-800/60 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+                        <div class="flex items-center gap-2 truncate">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-200 truncate">Acme Advisory Team</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
+                    </button>
+                    <!-- Dropdown -->
+                    <div x-show="open" @click.outside="open = false" x-transition class="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-1 z-50 text-xs">
+                        <div class="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Workspaces</div>
+                        <a href="#" @click="open=false" class="block px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium">Acme Advisory Team</a>
+                        <a href="#" @click="open=false" class="block px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700">Personal Booking</a>
+                        <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+                        <a href="#" @click="open=false; showToast('Create Workspace clicked')" class="block px-3 py-1.5 text-brand-600 dark:text-brand-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-700"><i class="fa-solid fa-plus mr-1"></i> New Workspace</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                <template x-for="item in navItems" :key="item.id">
+                    <button @click="currentTab = item.id; mobileSidebarOpen = false"
+                            :class="currentTab === item.id ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 font-medium'"
+                            class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition group">
+                        <div class="flex items-center gap-3">
+                            <i :class="item.icon" class="w-5 text-center text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition" :class="{ 'text-brand-600 dark:text-brand-400': currentTab === item.id }"></i>
+                            <span x-text="item.label"></span>
+                        </div>
+                        <span x-if="item.badge" x-show="item.badge" :class="item.badgeClass || 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300'" class="px-2 py-0.5 text-xs rounded-full font-bold" x-text="item.badge"></span>
+                    </button>
+                </template>
+            </nav>
+
+            <!-- Bottom Live Preview Link & Profile Summary -->
+            <div class="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                <button @click="currentTab = 'public-booking'" class="w-full flex items-center justify-between p-2.5 bg-gradient-to-r from-brand-500/10 to-indigo-500/10 hover:from-brand-500/20 hover:to-indigo-500/20 border border-brand-500/20 rounded-xl transition text-left">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-globe text-brand-600 dark:text-brand-400"></i>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-900 dark:text-white">Public Booking Page</div>
+                            <div class="text-[10px] text-slate-500 dark:text-slate-400">Preview live client view</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-xs text-brand-500"></i>
+                </button>
+
+                <!-- Toggle Empty State Demo Switch -->
+                <div class="px-2 py-1.5 flex items-center justify-between bg-slate-100 dark:bg-slate-800/40 rounded-lg text-xs">
+                    <span class="text-slate-500 dark:text-slate-400">Demo Empty States</span>
+                    <button @click="emptyStateMode = !emptyStateMode; showToast(emptyStateMode ? 'Empty state mode enabled' : 'Normal mode restored')"
+                            :class="emptyStateMode ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700'"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                        <span :class="emptyStateMode ? 'translate-x-4' : 'translate-x-0'" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Overlay for Mobile Sidebar -->
+        <div x-show="mobileSidebarOpen" @click="mobileSidebarOpen = false" class="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-sm md:hidden" x-transition></div>
+
+        <!-- ==================== MAIN CONTENT AREA ==================== -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+            <!-- HEADER BAR -->
+            <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 z-20">
+                
+                <!-- Left: Hamburger & Page Title -->
+                <div class="flex items-center gap-3">
+                    <button @click="mobileSidebarOpen = true" class="md:hidden text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white capitalize" x-text="getCurrentTabLabel()">Dashboard</h2>
+                    </div>
+                </div>
+
+                <!-- Center: Quick Search Command Bar -->
+                <div class="hidden md:flex items-center max-w-md w-full mx-4">
+                    <button @click="searchOpen = true" class="w-full flex items-center justify-between px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl text-slate-400 text-sm hover:border-brand-500/50 transition">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            <span>Search appointments, clients, event types...</span>
+                        </div>
+                        <kbd class="px-1.5 py-0.5 text-[10px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-500 dark:text-slate-300 font-mono">⌘K</kbd>
+                    </button>
+                </div>
+
+                <!-- Right Header Actions -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    
+                    <!-- Quick New Appointment Action Button -->
+                    <button @click="openNewAppointmentModal()" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-md shadow-brand-500/20 flex items-center gap-2 transition active:scale-95">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">New Appointment</span>
+                    </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            <i class="fa-regular fa-bell text-lg"></i>
+                            <span x-show="unreadNotificationsCount > 0" class="absolute top-1 right-1 w-2.5 h-2.5 bg-brand-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
+                        </button>
+
+                        <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50">
+                            <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                <h3 class="font-bold text-sm text-slate-900 dark:text-white">Notifications</h3>
+                                <button @click="markAllNotificationsRead()" class="text-xs text-brand-600 dark:text-brand-400 hover:underline">Mark all read</button>
+                            </div>
+                            <div class="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <div class="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition flex gap-3 items-start" :class="{ 'bg-brand-50/50 dark:bg-brand-950/20': notif.unread }">
+                                        <div :class="notif.iconBg || 'bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-300'" class="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0">
+                                            <i :class="notif.icon"></i>
+                                        </div>
+                                        <div class="flex-1 text-xs">
+                                            <p class="font-medium text-slate-900 dark:text-slate-100" x-text="notif.title"></p>
+                                            <p class="text-slate-500 dark:text-slate-400 mt-0.5" x-text="notif.desc"></p>
+                                            <span class="text-[10px] text-slate-400 mt-1 block" x-text="notif.time"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dark / Light Theme Toggle -->
+                    <button @click="darkMode = !darkMode" class="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        <i x-show="!darkMode" class="fa-solid fa-moon text-lg"></i>
+                        <i x-show="darkMode" class="fa-solid fa-sun text-lg text-amber-400"></i>
+                    </button>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="relative ml-1" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-8 h-8 rounded-full object-cover ring-2 ring-brand-500/30">
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs hidden sm:block"></i>
+                        </button>
+                        <div x-show="open" @click.outside="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50 text-xs">
+                            <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-800">
+                                <p class="font-bold text-slate-900 dark:text-white">Dr. Sarah Jenkins</p>
+                                <p class="text-slate-500 dark:text-slate-400 truncate">sarah@chronos.app</p>
+                            </div>
+                            <a href="#" @click="currentTab='settings'; open=false" class="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <i class="fa-regular fa-user w-4"></i> Profile Settings
+                            </a>
+                            <a href="#" @click="currentTab='settings'; open=false" class="flex items-center gap-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <i class="fa-solid fa-sliders w-4"></i> Preferences
+                            </a>
+                            <div class="border-t border-slate-200 dark:border-slate-800 my-1"></div>
+                            <a href="#" @click="showToast('Logged out successfully'); open=false" class="flex items-center gap-2 px-4 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium">
+                                <i class="fa-solid fa-right-from-bracket w-4"></i> Sign Out
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </header>
+
+            <!-- MAIN SCREEN VIEW BODY -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950">
+
+                <!-- ================= SCREEN 1: EXECUTIVE DASHBOARD ================= -->
+                <div x-show="currentTab === 'dashboard'" x-transition class="space-y-6">
+                    
+                    <!-- Dashboard Welcome & Quick Actions Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Good morning, Sarah 👋</h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400">Here's your appointment schedule and performance overview for today.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="copyBookingLink()" class="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2 transition">
+                                <i class="fa-regular fa-copy text-brand-500"></i> Share Booking Link
+                            </button>
+                            <button @click="openBlockTimeModal()" class="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm flex items-center gap-2 transition">
+                                <i class="fa-solid fa-ban text-amber-500"></i> Block Out Time
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Key KPI Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- KPI 1 -->
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Appointments</span>
+                                <div class="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm">
+                                    <i class="fa-regular fa-calendar-check"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-baseline justify-between">
+                                <span class="text-2xl font-bold text-slate-900 dark:text-white" x-text="emptyStateMode ? '0' : '142'"></span>
+                                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                    <i class="fa-solid fa-arrow-up text-[10px]"></i> +14.2%
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-slate-400 mt-1 block">vs. 124 last month</span>
+                        </div>
+
+                        <!-- KPI 2 -->
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Upcoming Today</span>
+                                <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">
+                                    <i class="fa-regular fa-clock"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-baseline justify-between">
+                                <span class="text-2xl font-bold text-slate-900 dark:text-white" x-text="emptyStateMode ? '0' : getTodayAppointments().length"></span>
+                                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">4 hours busy</span>
+                            </div>
+                            <span class="text-[11px] text-slate-400 mt-1 block">Next at 10:00 AM</span>
+                        </div>
+
+                        <!-- KPI 3 -->
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estimated Value</span>
+                                <div class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-dollar-sign"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-baseline justify-between">
+                                <span class="text-2xl font-bold text-slate-900 dark:text-white" x-text="emptyStateMode ? '$0' : '$4,850'"></span>
+                                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                    <i class="fa-solid fa-arrow-up text-[10px]"></i> +22.5%
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-slate-400 mt-1 block">30 paid bookings</span>
+                        </div>
+
+                        <!-- KPI 4 -->
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Occupancy Rate</span>
+                                <div class="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-chart-pie"></i>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-baseline justify-between">
+                                <span class="text-2xl font-bold text-slate-900 dark:text-white" x-text="emptyStateMode ? '0%' : '88%'"></span>
+                                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                                    <i class="fa-solid fa-arrow-up text-[10px]"></i> +5%
+                                </span>
+                            </div>
+                            <span class="text-[11px] text-slate-400 mt-1 block">Optimal schedule load</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Dashboard Split View: Schedule & Activity -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Today's Timeline View (2 cols) -->
+                        <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                                <div>
+                                    <h3 class="font-bold text-base text-slate-900 dark:text-white">Today's Schedule</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400" x-text="formatCurrentDate()"></p>
+                                </div>
+                                <button @click="currentTab = 'calendar'" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
+                                    Full Calendar <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                </button>
+                            </div>
+
+                            <!-- Timeline List -->
+                            <div class="mt-4 space-y-3">
+                                <!-- Empty State Handling -->
+                                <template x-if="emptyStateMode || getTodayAppointments().length === 0">
+                                    <div class="text-center py-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                        <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-3">
+                                            <i class="fa-regular fa-calendar-xmark text-xl"></i>
+                                        </div>
+                                        <h4 class="font-semibold text-sm text-slate-800 dark:text-slate-200">No appointments scheduled for today</h4>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">Share your booking page with clients to fill up your schedule.</p>
+                                        <button @click="openNewAppointmentModal()" class="mt-4 px-3.5 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">
+                                            <i class="fa-solid fa-plus mr-1"></i> Add Appointment
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <template x-if="!emptyStateMode">
+                                    <template x-for="app in appointments" :key="app.id">
+                                        <div @click="openAppointmentDetails(app)" class="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:border-brand-500/50 dark:hover:border-brand-500/50 hover:shadow-md transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                                            <div class="flex items-start gap-3">
+                                                <div class="p-2 bg-brand-50 dark:bg-slate-800 text-brand-600 dark:text-brand-400 rounded-lg text-center min-w-[60px] flex-shrink-0">
+                                                    <span class="block text-xs font-bold uppercase" x-text="app.time"></span>
+                                                    <span class="block text-[10px] text-slate-500 dark:text-slate-400" x-text="app.duration + 'm'"></span>
+                                                </div>
+                                                <div>
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition" x-text="app.clientName"></h4>
+                                                        <span :class="getStatusBadgeClass(app.status)" class="px-2 py-0.5 rounded-full text-[10px] font-bold capitalize" x-text="app.status"></span>
+                                                    </div>
+                                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" x-text="app.eventTypeName"></p>
+                                                    <div class="flex items-center gap-3 mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                                        <span class="flex items-center gap-1"><i class="fa-solid fa-video text-brand-500"></i> <span x-text="app.location"></span></span>
+                                                        <span class="flex items-center gap-1"><i class="fa-regular fa-envelope"></i> <span x-text="app.clientEmail"></span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2 self-end sm:self-center">
+                                                <button @click.stop="showToast('Join URL: ' + app.location)" class="px-3 py-1.5 bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-300 rounded-lg text-xs font-semibold hover:bg-brand-100 dark:hover:bg-brand-900/80 transition">
+                                                    Join Meeting
+                                                </button>
+                                                <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar Cards: Quick Activity Log & Calendar Widget -->
+                        <div class="space-y-6">
+                            
+                            <!-- Mini Share Card -->
+                            <div class="p-5 bg-gradient-to-br from-brand-600 to-indigo-700 text-white rounded-2xl shadow-md relative overflow-hidden">
+                                <div class="absolute -right-4 -bottom-4 opacity-10 text-9xl">
+                                    <i class="fa-solid fa-calendar-days"></i>
+                                </div>
+                                <h4 class="font-bold text-base">Your Booking Handle</h4>
+                                <p class="text-xs text-brand-100 mt-1">Share this with clients to allow instant booking based on your set availability.</p>
+                                <div class="mt-4 p-2 bg-white/10 backdrop-blur border border-white/20 rounded-xl flex items-center justify-between text-xs">
+                                    <span class="font-mono text-white/90 truncate">chronos.app/dr-sarah</span>
+                                    <button @click="copyBookingLink()" class="px-2.5 py-1 bg-white text-slate-900 rounded-lg font-semibold hover:bg-brand-50 transition flex-shrink-0">Copy</button>
+                                </div>
+                            </div>
+
+                            <!-- Recent Activity Feed -->
+                            <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm">
+                                <h3 class="font-bold text-sm text-slate-900 dark:text-white mb-4">Recent Activity</h3>
+                                <div class="space-y-4">
+                                    <template x-for="act in activityLog" :key="act.id">
+                                        <div class="flex items-start gap-3 text-xs">
+                                            <div :class="act.color" class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"></div>
+                                            <div class="flex-1">
+                                                <p class="text-slate-800 dark:text-slate-200 font-medium" x-text="act.message"></p>
+                                                <span class="text-[10px] text-slate-400" x-text="act.time"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================= SCREEN 2: INTERACTIVE CALENDAR ================= -->
+                <div x-show="currentTab === 'calendar'" x-transition class="space-y-6">
+                    
+                    <!-- Calendar Header Controls -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                        
+                        <!-- Navigation & Today -->
+                        <div class="flex items-center gap-3">
+                            <button @click="showToast('Navigated to Today')" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300">
+                                Today
+                            </button>
+                            <div class="flex items-center gap-1">
+                                <button class="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+                                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                                </button>
+                                <button class="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
+                                    <i class="fa-solid fa-chevron-right text-sm"></i>
+                                </button>
+                            </div>
+                            <span class="text-base font-bold text-slate-900 dark:text-white ml-2">October 2026</span>
+                        </div>
+
+                        <!-- View Selector Tabs -->
+                        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+                            <button @click="calendarView = 'month'" :class="calendarView === 'month' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg transition">Month</button>
+                            <button @click="calendarView = 'week'" :class="calendarView === 'week' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg transition">Week</button>
+                            <button @click="calendarView = 'day'" :class="calendarView === 'day' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg transition">Day</button>
+                            <button @click="calendarView = 'agenda'" :class="calendarView === 'agenda' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'" class="px-3 py-1.5 rounded-lg transition">Agenda</button>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Main Area with Sidebar Navigator -->
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        
+                        <!-- Left Panel Filters & Mini Calendar -->
+                        <div class="space-y-4">
+                            <!-- Mini Calendar Widget -->
+                            <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                                <div class="flex items-center justify-between mb-3 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    <span>October 2026</span>
+                                    <div class="flex gap-2">
+                                        <i class="fa-solid fa-chevron-left cursor-pointer hover:text-brand-500"></i>
+                                        <i class="fa-solid fa-chevron-right cursor-pointer hover:text-brand-500"></i>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1 text-center text-[11px] text-slate-400 font-medium mb-1">
+                                    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                                </div>
+                                <div class="grid grid-cols-7 gap-1 text-center text-xs">
+                                    <template x-for="day in 31" :key="day">
+                                        <button @click="showToast('Selected date Oct ' + day)" :class="day === 28 ? 'bg-brand-600 text-white font-bold rounded-lg' : 'hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300'" class="h-7 w-full flex items-center justify-center">
+                                            <span x-text="day"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Filter Event Types -->
+                            <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                                <h4 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">Event Types</h4>
+                                <div class="space-y-2 text-xs">
+                                    <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                        <input type="checkbox" checked class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                                        1-on-1 Strategy Call
+                                    </label>
+                                    <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                        <input type="checkbox" checked class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                        Technical Architecture Review
+                                    </label>
+                                    <label class="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                                        <input type="checkbox" checked class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                        Free Intro Chat
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Grid View -->
+                        <div class="lg:col-span-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm overflow-x-auto min-h-[500px]">
+                            
+                            <!-- Week Grid View Example -->
+                            <div x-show="calendarView === 'week' || calendarView === 'month'">
+                                <div class="grid grid-cols-7 gap-px bg-slate-200 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                                    <!-- Days Headers -->
+                                    <template x-for="day in ['Mon 28', 'Tue 29', 'Wed 30', 'Thu 1', 'Fri 2', 'Sat 3', 'Sun 4']" :key="day">
+                                        <div class="bg-slate-50 dark:bg-slate-900 p-2 text-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                                            <span x-text="day"></span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Grid Slots -->
+                                    <template x-for="slot in 21" :key="slot">
+                                        <div @click="openNewAppointmentModal()" class="bg-white dark:bg-slate-900 min-h-[90px] p-1.5 border border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition relative cursor-pointer group">
+                                            <span class="text-[10px] text-slate-400 group-hover:text-brand-500 font-mono" x-text="slot % 7 === 1 ? (8 + Math.floor(slot/7)*2) + ':00 AM' : ''"></span>
+                                            
+                                            <!-- Render Scheduled Events on slot matches -->
+                                            <template x-if="slot === 2">
+                                                <div @click.stop="openAppointmentDetails(appointments[0])" class="mt-1 p-1.5 bg-brand-50 dark:bg-brand-950/80 border-l-2 border-brand-500 rounded text-xs hover:shadow-sm transition">
+                                                    <div class="font-bold text-brand-900 dark:text-brand-200 truncate">10:00 AM - Michael Vance</div>
+                                                    <div class="text-[10px] text-brand-600 dark:text-brand-400 truncate">Strategy Call</div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="slot === 4">
+                                                <div @click.stop="openAppointmentDetails(appointments[1])" class="mt-1 p-1.5 bg-emerald-50 dark:bg-emerald-950/80 border-l-2 border-emerald-500 rounded text-xs hover:shadow-sm transition">
+                                                    <div class="font-bold text-emerald-900 dark:text-emerald-200 truncate">02:00 PM - Alex Chen</div>
+                                                    <div class="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">Tech Review</div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Agenda View -->
+                            <div x-show="calendarView === 'agenda'" class="space-y-4">
+                                <template x-for="app in appointments" :key="app.id">
+                                    <div class="p-4 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition">
+                                        <div class="flex items-center gap-4">
+                                            <div class="text-center font-bold text-slate-900 dark:text-white w-16">
+                                                <span class="block text-sm" x-text="app.time"></span>
+                                                <span class="block text-[10px] text-slate-400" x-text="app.duration + ' min'"></span>
+                                            </div>
+                                            <div class="border-l border-slate-200 dark:border-slate-700 pl-4">
+                                                <h4 class="font-bold text-sm text-slate-900 dark:text-white" x-text="app.clientName"></h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400" x-text="app.eventTypeName"></p>
+                                            </div>
+                                        </div>
+                                        <button @click="openAppointmentDetails(app)" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">View Details</button>
+                                    </div>
+                                </template>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ================= SCREEN 3: APPOINTMENTS DIRECTORY ================= -->
+                <div x-show="currentTab === 'appointments'" x-transition class="space-y-6">
+                    
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="relative flex-1 max-w-md">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" x-model="appointmentSearchQuery" placeholder="Filter by name, email, or service..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <!-- Status Filter Pills -->
+                        <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+                            <button @click="appointmentFilterStatus = 'all'" :class="appointmentFilterStatus === 'all' ? 'bg-brand-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">All</button>
+                            <button @click="appointmentFilterStatus = 'confirmed'" :class="appointmentFilterStatus === 'confirmed' ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">Confirmed</button>
+                            <button @click="appointmentFilterStatus = 'pending'" :class="appointmentFilterStatus === 'pending' ? 'bg-amber-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">Pending</button>
+                            <button @click="appointmentFilterStatus = 'cancelled'" :class="appointmentFilterStatus === 'cancelled' ? 'bg-rose-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">Cancelled</button>
+                            <button @click="appointmentFilterStatus = 'completed'" :class="appointmentFilterStatus === 'completed' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">Completed</button>
+                            <button @click="appointmentFilterStatus = 'rescheduled'" :class="appointmentFilterStatus === 'rescheduled' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition">Rescheduled</button>
+                        </div>
+                    </div>
+
+                    <!-- Appointments Data Table Container -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs sm:text-sm">
+                                <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="py-3.5 px-4">Client</th>
+                                        <th class="py-3.5 px-4">Event Type</th>
+                                        <th class="py-3.5 px-4">Date & Time</th>
+                                        <th class="py-3.5 px-4">Location</th>
+                                        <th class="py-3.5 px-4">Status</th>
+                                        <th class="py-3.5 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                                    <template x-if="emptyStateMode || getFilteredAppointments().length === 0">
+                                        <tr>
+                                            <td colspan="6" class="py-12 text-center text-slate-400">
+                                                <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+                                                No appointments match your filters.
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    
+                                    <template x-if="!emptyStateMode">
+                                        <template x-for="app in getFilteredAppointments()" :key="app.id">
+                                            <tr @click="openAppointmentDetails(app)" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition cursor-pointer">
+                                                <td class="py-3.5 px-4">
+                                                    <div class="flex items-center gap-3">
+                                                        <img :src="app.clientAvatar" alt="Avatar" class="w-8 h-8 rounded-full object-cover">
+                                                        <div>
+                                                            <span class="font-semibold text-slate-900 dark:text-white block" x-text="app.clientName"></span>
+                                                            <span class="text-[11px] text-slate-400 block" x-text="app.clientEmail"></span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200" x-text="app.eventTypeName"></td>
+                                                <td class="py-3.5 px-4">
+                                                    <span class="font-medium text-slate-900 dark:text-white block" x-text="app.date"></span>
+                                                    <span class="text-[11px] text-slate-400 block" x-text="app.time + ' (' + app.duration + 'm)'"></span>
+                                                </td>
+                                                <td class="py-3.5 px-4">
+                                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">
+                                                        <i class="fa-solid fa-video text-brand-500"></i>
+                                                        <span x-text="app.location"></span>
+                                                    </span>
+                                                </td>
+                                                <td class="py-3.5 px-4">
+                                                    <span :class="getStatusBadgeClass(app.status)" class="px-2.5 py-1 rounded-full text-xs font-bold capitalize" x-text="app.status"></span>
+                                                </td>
+                                                <td class="py-3.5 px-4 text-right">
+                                                    <button @click.stop="openAppointmentDetails(app)" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition">
+                                                        Manage
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ================= SCREEN 4: EVENT TYPES / SERVICES MANAGEMENT ================= -->
+                <div x-show="currentTab === 'event-types'" x-transition class="space-y-6">
+                    
+                    <!-- Top Action Bar -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Event Types</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Configure appointment types and booking links for your client base.</p>
+                        </div>
+                        <button @click="openNewEventTypeModal()" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                            <i class="fa-solid fa-plus"></i> New Event Type
+                        </button>
+                    </div>
+
+                    <!-- Event Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <template x-for="event in eventTypes" :key="event.id">
+                            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition relative flex flex-col justify-between group">
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-600 dark:bg-brand-950/80 dark:text-brand-300" x-text="event.duration + ' Mins'"></span>
+                                        <div class="flex items-center gap-1">
+                                            <button @click="event.active = !event.active; showToast(event.title + (event.active ? ' activated' : ' deactivated'))"
+                                                    :class="event.active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+                                                    class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200">
+                                                <span :class="event.active ? 'translate-x-3' : 'translate-x-0'" class="inline-block h-3 w-3 transform rounded-full bg-white shadow transition"></span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition" x-text="event.title"></h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2" x-text="event.description"></p>
+
+                                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-video text-brand-500"></i> <span x-text="event.location"></span></span>
+                                        <span class="font-bold text-slate-900 dark:text-white" x-text="event.price > 0 ? '$' + event.price : 'Free'"></span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                                    <button @click="copyBookingLink(event.slug)" class="px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition">
+                                        <i class="fa-regular fa-copy text-brand-500"></i> Copy Link
+                                    </button>
+                                    <button @click="openEditEventTypeModal(event)" class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">
+                                        Edit
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                </div>
+
+                <!-- ================= SCREEN 5: AVAILABILITY MANAGEMENT ================= -->
+                <div x-show="currentTab === 'availability'" x-transition class="space-y-6 max-w-4xl mx-auto">
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Availability Schedules</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Set your weekly recurring hours and holiday overrides for client bookings.</p>
+                        </div>
+                        <button @click="showToast('Availability settings saved')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-sm transition">
+                            Save Changes
+                        </button>
+                    </div>
+
+                    <!-- Timezone Bar -->
+                    <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-earth-americas text-brand-500 text-sm"></i>
+                            <span class="font-semibold text-slate-800 dark:text-slate-200">Active Timezone</span>
+                        </div>
+                        <select x-model="availability.timezone" class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-800 dark:text-slate-200 font-medium focus:outline-none">
+                            <option value="America/New_York">Eastern Time (US & Canada) GMT-4</option>
+                            <option value="America/Los_Angeles">Pacific Time (US & Canada) GMT-7</option>
+                            <option value="Europe/London">London (GMT+1)</option>
+                            <option value="Asia/Kolkata">India (GMT+5:30)</option>
+                        </select>
+                    </div>
+
+                    <!-- Weekly Recurring Schedule Builder -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+                        <h4 class="font-bold text-sm text-slate-900 dark:text-white pb-2 border-b border-slate-200 dark:border-slate-800">Weekly Hours</h4>
+                        
+                        <template x-for="(daySchedule, dayName) in availability.schedule" :key="dayName">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-800/50">
+                                <div class="flex items-center gap-3 w-32">
+                                    <button @click="daySchedule.active = !daySchedule.active"
+                                            :class="daySchedule.active ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700'"
+                                            class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition duration-200">
+                                        <span :class="daySchedule.active ? 'translate-x-4' : 'translate-x-0'" class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition"></span>
+                                    </button>
+                                    <span class="text-xs font-bold text-slate-900 dark:text-white capitalize" x-text="dayName"></span>
+                                </div>
+
+                                <div class="flex-1 space-y-2">
+                                    <template x-if="!daySchedule.active">
+                                        <span class="text-xs text-slate-400 italic">Unavailable</span>
+                                    </template>
+
+                                    <template x-if="daySchedule.active">
+                                        <div class="space-y-2">
+                                            <template x-for="(slot, idx) in daySchedule.slots" :key="idx">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="time" x-model="slot.start" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none">
+                                                    <span class="text-slate-400 text-xs">-</span>
+                                                    <input type="time" x-model="slot.end" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none">
+                                                    <button @click="daySchedule.slots.splice(idx, 1)" class="text-slate-400 hover:text-rose-500 p-1">
+                                                        <i class="fa-solid fa-trash-can text-xs"></i>
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <template x-if="daySchedule.active">
+                                    <button @click="daySchedule.slots.push({start: '09:00', end: '17:00'})" class="text-xs text-brand-600 dark:text-brand-400 font-semibold hover:underline flex items-center gap-1">
+                                        <i class="fa-solid fa-plus text-[10px]"></i> Add Slot
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Buffer Times & Minimum Notice Settings -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Buffer Time</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Add padding time before and after appointments.</p>
+                            <select class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200">
+                                <option>15 minutes before/after</option>
+                                <option>30 minutes before/after</option>
+                                <option>No buffer</option>
+                            </select>
+                        </div>
+
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white mb-2">Minimum Booking Notice</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Prevent last-minute bookings on your calendar.</p>
+                            <select class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200">
+                                <option>4 hours advance notice</option>
+                                <option>24 hours advance notice</option>
+                                <option>48 hours advance notice</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ================= SCREEN 6: CLIENT CRM DIRECTORY ================= -->
+                <div x-show="currentTab === 'clients'" x-transition class="space-y-6">
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Clients Directory</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">View and manage contact profiles, booking history, and revenues.</p>
+                        </div>
+                        <div class="relative w-full sm:w-72">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" x-model="clientSearchQuery" placeholder="Search clients..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-brand-500">
+                        </div>
+                    </div>
+
+                    <!-- Client Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <template x-if="emptyStateMode || getFilteredClients().length === 0">
+                            <div class="col-span-full py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                                <i class="fa-solid fa-users text-3xl mb-2 block"></i>
+                                No clients found.
+                            </div>
+                        </template>
+
+                        <template x-if="!emptyStateMode">
+                            <template x-for="client in getFilteredClients()" :key="client.id">
+                                <div @click="openClientDetails(client)" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group">
+                                    <div>
+                                        <div class="flex items-center gap-3">
+                                            <img :src="client.avatar" alt="Client" class="w-12 h-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800">
+                                            <div>
+                                                <h4 class="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition" x-text="client.name"></h4>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400" x-text="client.company"></p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                                            <div class="flex items-center gap-2"><i class="fa-regular fa-envelope w-4"></i> <span x-text="client.email"></span></div>
+                                            <div class="flex items-center gap-2"><i class="fa-solid fa-phone w-4"></i> <span x-text="client.phone"></span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 block uppercase">Bookings</span>
+                                            <span class="font-bold text-slate-900 dark:text-white" x-text="client.totalBookings"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] text-slate-400 block uppercase">Total Spent</span>
+                                            <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="'$' + client.totalSpent"></span>
+                                        </div>
+                                        <button class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold">
+                                            Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
+
+                </div>
+
+                <!-- ================= SCREEN 7: PUBLIC CLIENT BOOKING SIMULATION ================= -->
+                <div x-show="currentTab === 'public-booking'" x-transition class="max-w-3xl mx-auto space-y-6">
+                    
+                    <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-eye"></i> <strong>Live Simulation:</strong> This is what your clients see when booking an appointment.</span>
+                        <button @click="resetPublicBooking()" class="underline font-semibold">Reset Demo Flow</button>
+                    </div>
+
+                    <!-- Client Booking Container -->
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+                        
+                        <!-- Header Profile Card -->
+                        <div class="bg-gradient-to-r from-brand-600 to-indigo-700 p-6 text-white text-center">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Sarah" class="w-16 h-16 rounded-full mx-auto ring-4 ring-white/30 shadow-md object-cover">
+                            <h3 class="text-xl font-bold mt-2">Dr. Sarah Jenkins</h3>
+                            <p class="text-xs text-brand-100">Senior Strategy Consultant & Technical Advisor</p>
+                        </div>
+
+                        <!-- Step 1: Select Event Type -->
+                        <div x-show="publicBookingStep === 1" class="p-6 space-y-4">
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white uppercase tracking-wider text-center mb-4">Select a Meeting Type</h4>
+                            <div class="space-y-3">
+                                <template x-for="event in eventTypes" :key="event.id">
+                                    <div @click="selectPublicEvent(event)" class="p-4 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-brand-500 dark:hover:border-brand-500 hover:bg-brand-50/30 dark:hover:bg-brand-950/30 cursor-pointer transition flex items-center justify-between group">
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h5 class="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition" x-text="event.title"></h5>
+                                                <span class="px-2 py-0.5 text-[10px] bg-slate-100 dark:bg-slate-800 rounded-md font-semibold text-slate-600 dark:text-slate-300" x-text="event.duration + ' min'"></span>
+                                            </div>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" x-text="event.description"></p>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-bold text-sm text-slate-900 dark:text-white block" x-text="event.price > 0 ? '$' + event.price : 'Free'"></span>
+                                            <i class="fa-solid fa-chevron-right text-slate-400 text-xs mt-1"></i>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Pick Date & Time -->
+                        <div x-show="publicBookingStep === 2" class="p-6 space-y-6">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                                <button @click="publicBookingStep = 1" class="text-xs text-brand-600 font-semibold hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i> Back</button>
+                                <span class="text-xs font-bold text-slate-900 dark:text-white" x-text="selectedPublicEvent ? selectedPublicEvent.title : ''"></span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Mini Date Picker -->
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3">1. Select Date</h5>
+                                    <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                                        <div class="text-center font-bold text-xs text-slate-800 dark:text-slate-200 mb-2">October 2026</div>
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs">
+                                            <template x-for="d in 31" :key="d">
+                                                <button @click="publicSelectedDate = '2026-10-' + d" :class="publicSelectedDate === '2026-10-' + d ? 'bg-brand-600 text-white font-bold' : 'hover:bg-slate-100 dark:hover:bg-slate-800'" class="h-8 rounded-lg flex items-center justify-center">
+                                                    <span x-text="d"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Time Slot Picker -->
+                                <div>
+                                    <h5 class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3">2. Select Time (EDT)</h5>
+                                    <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                        <template x-for="time in ['09:00 AM', '10:30 AM', '01:00 PM', '02:30 PM', '04:00 PM']" :key="time">
+                                            <button @click="selectPublicTime(time)" :class="publicSelectedTime === time ? 'bg-brand-600 text-white font-bold' : 'border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:border-brand-500'" class="w-full py-2 rounded-xl text-xs transition">
+                                                <span x-text="time"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Client Details Form -->
+                        <div x-show="publicBookingStep === 3" class="p-6 space-y-4">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                                <button @click="publicBookingStep = 2" class="text-xs text-brand-600 font-semibold hover:underline"><i class="fa-solid fa-arrow-left mr-1"></i> Change Date/Time</button>
+                                <span class="text-xs text-slate-500" x-text="publicSelectedDate + ' at ' + publicSelectedTime"></span>
+                            </div>
+
+                            <form @submit.prevent="submitPublicBooking()" class="space-y-4 text-xs">
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Your Full Name</label>
+                                    <input type="text" x-model="publicForm.name" required placeholder="e.g. Eleanor Vance" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-brand-500 text-slate-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+                                    <input type="email" x-model="publicForm.email" required placeholder="eleanor@example.com" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-brand-500 text-slate-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                                    <input type="tel" x-model="publicForm.phone" placeholder="+1 (555) 000-0000" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-brand-500 text-slate-900 dark:text-white">
+                                </div>
+                                <div>
+                                    <label class="block font-medium text-slate-700 dark:text-slate-300 mb-1">Notes / What would you like to discuss?</label>
+                                    <textarea x-model="publicForm.notes" rows="3" placeholder="Brief details about your project or topics..." class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-brand-500 text-slate-900 dark:text-white"></textarea>
+                                </div>
+                                <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-md shadow-brand-500/20 transition">
+                                    Confirm & Book Appointment
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Step 4: Success Confirmation -->
+                        <div x-show="publicBookingStep === 4" class="p-8 text-center space-y-4">
+                            <div class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Appointment Confirmed!</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">A calendar invitation and confirmation email have been sent to your inbox.</p>
+
+                            <div class="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl text-xs text-left max-w-sm mx-auto space-y-2 border border-slate-200 dark:border-slate-700">
+                                <div class="flex justify-between"><span class="text-slate-400">Meeting:</span> <span class="font-bold text-slate-800 dark:text-slate-200" x-text="selectedPublicEvent ? selectedPublicEvent.title : ''"></span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">Date & Time:</span> <span class="font-bold text-slate-800 dark:text-slate-200" x-text="publicSelectedDate + ' @ ' + publicSelectedTime"></span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">Location:</span> <span class="font-bold text-brand-600 dark:text-brand-400">Google Meet (Link sent)</span></div>
+                            </div>
+
+                            <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <button @click="showToast('Added to Google Calendar')" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-semibold">
+                                    <i class="fa-brands fa-google mr-1"></i> Add to Google Calendar
+                                </button>
+                                <button @click="resetPublicBooking()" class="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold">
+                                    Book Another
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ================= SCREEN 8: USER SETTINGS & PREFERENCES ================= -->
+                <div x-show="currentTab === 'settings'" x-transition class="space-y-6 max-w-4xl mx-auto">
+                    
+                    <!-- Settings Navigation Tabs -->
+                    <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                        <button @click="settingsTab = 'profile'" :class="settingsTab === 'profile' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Account Profile</button>
+                        <button @click="settingsTab = 'integrations'" :class="settingsTab === 'integrations' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Integrations</button>
+                        <button @click="settingsTab = 'notifications'" :class="settingsTab === 'notifications' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Notifications</button>
+                        <button @click="settingsTab = 'branding'" :class="settingsTab === 'branding' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Branding</button>
+                        <button @click="settingsTab = 'security'" :class="settingsTab === 'security' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Security</button>
+                        <button @click="settingsTab = 'billing'" :class="settingsTab === 'billing' ? 'border-brand-600 text-brand-600 dark:text-brand-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'" class="px-3 py-1.5 border-b-2 text-xs transition">Billing</button>
+                    </div>
+
+                    <!-- Profile Settings -->
+                    <div x-show="settingsTab === 'profile'" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-16 h-16 rounded-full object-cover ring-2 ring-brand-500">
+                            <div>
+                                <button @click="showToast('Avatar upload simulated')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition">Change Photo</button>
+                                <p class="text-[10px] text-slate-400 mt-1">JPG, GIF or PNG. 1MB max.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+                                <input type="text" value="Dr. Sarah Jenkins" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
+                                <input type="email" value="sarah@chronos.app" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Custom Booking Slug</label>
+                                <div class="flex items-center">
+                                    <span class="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-xl text-slate-400">chronos.app/</span>
+                                    <input type="text" value="dr-sarah" class="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-r-xl text-slate-900 dark:text-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button @click="showToast('Profile saved successfully')" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition">
+                            Save Profile
+                        </button>
+                    </div>
+
+                    <!-- Integrations Settings -->
+                    <div x-show="settingsTab === 'integrations'" class="space-y-4">
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-brands fa-google text-2xl text-red-500"></i>
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">Google Calendar</h4>
+                                    <p class="text-xs text-slate-500">Sync appointments and check for double bookings in real time.</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded-full text-xs font-bold">Connected</span>
+                        </div>
+
+                        <div class="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-video text-2xl text-blue-500"></i>
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">Zoom Video Conferencing</h4>
+                                    <p class="text-xs text-slate-500">Automatically generate unique Zoom meeting links for new bookings.</p>
+                                </div>
+                            </div>
+                            <button @click="showToast('Zoom integration connected')" class="px-3.5 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold">Connect</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= MODALS & DRAWERS ================= -->
+
+    <!-- Command Palette Search Modal (Cmd+K) -->
+    <div x-show="searchOpen" @keydown.escape.window="searchOpen = false" class="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-950/60 backdrop-blur-sm" x-cloak x-transition>
+        <div @click.outside="searchOpen = false" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+                <input type="text" placeholder="Type a command or search appointments..." class="w-full bg-transparent border-none text-slate-900 dark:text-white text-sm focus:outline-none">
+            </div>
+            <div class="p-2 text-xs space-y-1">
+                <div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase">Quick Actions</div>
+                <button @click="searchOpen=false; openNewAppointmentModal()" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between">
+                    <span>Create New Appointment</span>
+                    <kbd class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">N</kbd>
+                </button>
+                <button @click="searchOpen=false; currentTab='availability'" class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between">
+                    <span>Manage Availability Schedule</span>
+                    <kbd class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">A</kbd>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Details Drawer -->
+    <div x-show="appointmentDrawerOpen" class="fixed inset-0 z-50 overflow-hidden" x-cloak x-transition>
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" @click="appointmentDrawerOpen = false"></div>
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div class="w-screen max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+                <template x-if="selectedAppointment">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                            <div>
+                                <span :class="getStatusBadgeClass(selectedAppointment.status)" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold capitalize" x-text="selectedAppointment.status"></span>
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mt-1" x-text="selectedAppointment.clientName"></h3>
+                            </div>
+                            <button @click="appointmentDrawerOpen = false" class="text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+
+                        <div class="space-y-4 text-xs">
+                            <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-2">
+                                <div class="flex justify-between"><span class="text-slate-400">Meeting Type:</span> <span class="font-bold text-slate-800 dark:text-slate-200" x-text="selectedAppointment.eventTypeName"></span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">Date & Time:</span> <span class="font-bold text-slate-800 dark:text-slate-200" x-text="selectedAppointment.date + ' @ ' + selectedAppointment.time"></span></div>
+                                <div class="flex justify-between"><span class="text-slate-400">Duration:</span> <span class="font-bold text-slate-800 dark:text-slate-200" x-text="selectedAppointment.duration + ' minutes'"></span></div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-slate-900 dark:text-white mb-2">Contact Details</h4>
+                                <p class="text-slate-600 dark:text-slate-400" x-text="'Email: ' + selectedAppointment.clientEmail"></p>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-slate-900 dark:text-white mb-2">Client Notes</h4>
+                                <p class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-slate-600 dark:text-slate-300 italic" x-text="selectedAppointment.notes || 'No custom notes provided.'"></p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                            <button @click="showToast('Join URL copied to clipboard')" class="w-full py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold shadow">
+                                Join Video Call
+                            </button>
+                            <button @click="cancelAppointment(selectedAppointment.id)" class="w-full py-2.5 border border-rose-200 text-rose-600 dark:border-rose-900/50 dark:text-rose-400 rounded-xl text-xs font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30">
+                                Cancel Appointment
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Appointment Modal -->
+    <div x-show="newAppointmentModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" x-cloak x-transition>
+        <div @click.outside="newAppointmentModalOpen = false" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white">Create New Appointment</h3>
+                <button @click="newAppointmentModalOpen = false"><i class="fa-solid fa-xmark text-slate-400"></i></button>
+            </div>
+
+            <form @submit.prevent="createNewAppointment()" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium mb-1 text-slate-700 dark:text-slate-300">Client Name</label>
+                    <input type="text" x-model="newAppForm.clientName" required class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1 text-slate-700 dark:text-slate-300">Client Email</label>
+                    <input type="email" x-model="newAppForm.clientEmail" required class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-medium mb-1 text-slate-700 dark:text-slate-300">Date</label>
+                        <input type="date" x-model="newAppForm.date" required class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block font-medium mb-1 text-slate-700 dark:text-slate-300">Time</label>
+                        <input type="time" x-model="newAppForm.time" required class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-brand-600 text-white rounded-xl font-bold mt-2 shadow-md">Schedule Appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-transition class="pointer-events-auto px-4 py-3 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-3">
+                <i class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600"></i>
+                <span x-text="toast.message"></span>
+            </div>
+        </template>
+    </div>
+
+    <!-- ================= JS APPLICATION STATE & CONTROLLER ================= -->
+    <script>
+        function chronosApp() {
+            return {
+                currentTab: 'dashboard',
+                darkMode: true,
+                mobileSidebarOpen: false,
+                searchOpen: false,
+                emptyStateMode: false,
+                calendarView: 'week',
+                settingsTab: 'profile',
+                
+                // Toast Alert System
+                toasts: [],
+                showToast(msg) {
+                    const id = Date.now();
+                    this.toasts.push({ id, message: msg });
+                    setTimeout(() => {
+                        this.toasts = this.toasts.filter(t => t.id !== id);
+                    }, 3500);
+                },
+
+                // Navigation Items
+                navItems: [
+                    { id: 'dashboard', label: 'Dashboard', icon: 'fa-solid fa-chart-line' },
+                    { id: 'calendar', label: 'Calendar', icon: 'fa-regular fa-calendar-days' },
+                    { id: 'appointments', label: 'Appointments', icon: 'fa-regular fa-clock', badge: '5' },
+                    { id: 'event-types', label: 'Event Types', icon: 'fa-solid fa-layer-group' },
+                    { id: 'availability', label: 'Availability', icon: 'fa-regular fa-calendar-check' },
+                    { id: 'clients', label: 'Clients CRM', icon: 'fa-solid fa-users' },
+                    { id: 'reports', label: 'Reports', icon: 'fa-solid fa-chart-pie', badge: 'New' },
+                    { id: 'billing', label: 'Billing', icon: 'fa-solid fa-credit-card' },
+                    { id: 'analytics', label: 'Analytics', icon: 'fa-solid fa-chart-line' },
+                    { id: 'settings', label: 'Settings', icon: 'fa-solid fa-gear' },
+                ],
+
+                getCurrentTabLabel() {
+                    const found = this.navItems.find(i => i.id === this.currentTab);
+                    return found ? found.label : 'Chronos';
+                },
+
+                // Notifications Data
+                notifications: [
+                    { id: 1, title: 'New Booking', desc: 'Michael Vance booked 1-on-1 Strategy Call', time: '10 mins ago', icon: 'fa-solid fa-calendar-plus', unread: true },
+                    { id: 2, title: 'Payment Received', desc: '$120.00 from Alex Chen for Tech Review', time: '1 hour ago', icon: 'fa-solid fa-dollar-sign', iconBg: 'bg-emerald-100 text-emerald-600', unread: true },
+                ],
+                get unreadNotificationsCount() {
+                    return this.notifications.filter(n => n.unread).length;
+                },
+                markAllNotificationsRead() {
+                    this.notifications.forEach(n => n.unread = false);
+                    this.showToast('All notifications marked as read');
+                },
+
+                // Data Models
+                eventTypes: [
+                    { id: 1, title: '1-on-1 Strategy Call', duration: 30, price: 50, location: 'Google Meet', description: 'Deep dive strategic session to review roadmap & goals.', active: true, slug: 'strategy-30' },
+                    { id: 2, title: 'Technical Review', duration: 60, price: 120, location: 'Zoom Video', description: 'Comprehensive codebase audit and architecture planning.', active: true, slug: 'tech-review-60' },
+                    { id: 3, title: 'Free Intro Chat', duration: 15, price: 0, location: 'Phone Call', description: 'Brief introductory consultation to assess alignment.', active: true, slug: 'intro-15' },
+                ],
+
+                appointments: [
+                    { id: 101, clientName: 'Michael Vance', clientEmail: 'michael@vance.io', clientAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80', eventTypeName: '1-on-1 Strategy Call', date: '2026-10-28', time: '10:00 AM', duration: 30, status: 'confirmed', location: 'meet.google.com/abc-defg-hij', notes: 'Interested in scaling team capacity.' },
+                    { id: 102, clientName: 'Alex Chen', clientEmail: 'alex@chentech.com', clientAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80', eventTypeName: 'Technical Review', date: '2026-10-28', time: '02:00 PM', duration: 60, status: 'confirmed', location: 'zoom.us/j/987654321', notes: 'Architecture overhaul for Q4.' },
+                    { id: 103, clientName: 'Sophia Martinez', clientEmail: 'sophia@martinez.org', clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80', eventTypeName: 'Free Intro Chat', date: '2026-10-29', time: '11:15 AM', duration: 15, status: 'pending', location: 'Phone Call', notes: 'Initial project inquiry.' },
+                ],
+
+                clients: [
+                    { id: 1, name: 'Michael Vance', company: 'Vance Tech', email: 'michael@vance.io', phone: '+1 555-0192', totalBookings: 4, totalSpent: 200, avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80' },
+                    { id: 2, name: 'Alex Chen', company: 'Chen Enterprise', email: 'alex@chentech.com', phone: '+1 555-0143', totalBookings: 2, totalSpent: 240, avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop&q=80' },
+                    { id: 3, name: 'Sophia Martinez', company: 'Studio Design', email: 'sophia@martinez.org', phone: '+1 555-0188', totalBookings: 1, totalSpent: 0, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80' },
+                ],
+
+                activityLog: [
+                    { id: 1, message: 'New booking by Michael Vance', time: '12 mins ago', color: 'bg-brand-500' },
+                    { id: 2, message: 'Updated Availability for Thursday', time: '2 hours ago', color: 'bg-emerald-500' },
+                    { id: 3, message: 'Google Calendar sync completed', time: '5 hours ago', color: 'bg-sky-500' },
+                ],
+
+                availability: {
+                    timezone: 'America/New_York',
+                    schedule: {
+                        monday: { active: true, slots: [{ start: '09:00', end: '17:00' }] },
+                        tuesday: { active: true, slots: [{ start: '09:00', end: '17:00' }] },
+                        wednesday: { active: true, slots: [{ start: '09:00', end: '17:00' }] },
+                        thursday: { active: true, slots: [{ start: '09:00', end: '17:00' }] },
+                        friday: { active: true, slots: [{ start: '09:00', end: '15:00' }] },
+                        saturday: { active: false, slots: [] },
+                        sunday: { active: false, slots: [] },
+                    }
+                },
+
+                // Filters
+                appointmentSearchQuery: '',
+                appointmentFilterStatus: 'all',
+                clientSearchQuery: '',
+
+                getFilteredAppointments() {
+                    return this.appointments.filter(a => {
+                        const matchesSearch = a.clientName.toLowerCase().includes(this.appointmentSearchQuery.toLowerCase()) || a.eventTypeName.toLowerCase().includes(this.appointmentSearchQuery.toLowerCase());
+                        const matchesStatus = this.appointmentFilterStatus === 'all' || a.status === this.appointmentFilterStatus;
+                        return matchesSearch && matchesStatus;
+                    });
+                },
+
+                getFilteredClients() {
+                    return this.clients.filter(c => c.name.toLowerCase().includes(this.clientSearchQuery.toLowerCase()) || c.company.toLowerCase().includes(this.clientSearchQuery.toLowerCase()));
+                },
+
+                getTodayAppointments() {
+                    return this.appointments.filter(a => a.date === '2026-10-28');
+                },
+
+                getStatusBadgeClass(status) {
+                    switch(status) {
+                        case 'confirmed': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+                        case 'pending': return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+                        case 'cancelled': return 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+                        default: return 'bg-slate-100 text-slate-700';
+                    }
+                },
+
+                formatCurrentDate() {
+                    return 'Wednesday, Oct 28, 2026';
+                },
+
+                // Appointment Drawer Controls
+                appointmentDrawerOpen: false,
+                selectedAppointment: null,
+                openAppointmentDetails(app) {
+                    this.selectedAppointment = app;
+                    this.appointmentDrawerOpen = true;
+                },
+                cancelAppointment(id) {
+                    this.appointments = this.appointments.map(a => a.id === id ? { ...a, status: 'cancelled' } : a);
+                    this.appointmentDrawerOpen = false;
+                    this.showToast('Appointment cancelled');
+                },
+
+                // New Appointment Modal
+                newAppointmentModalOpen: false,
+                newAppForm: { clientName: '', clientEmail: '', date: '2026-10-28', time: '03:00' },
+                openNewAppointmentModal() {
+                    this.newAppointmentModalOpen = true;
+                },
+                createNewAppointment() {
+                    const newApp = {
+                        id: Date.now(),
+                        clientName: this.newAppForm.clientName,
+                        clientEmail: this.newAppForm.clientEmail,
+                        clientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                        eventTypeName: '1-on-1 Strategy Call',
+                        date: this.newAppForm.date,
+                        time: this.newAppForm.time,
+                        duration: 30,
+                        status: 'confirmed',
+                        location: 'meet.google.com/new-meet',
+                        notes: 'Created via admin panel.'
+                    };
+                    this.appointments.unshift(newApp);
+                    this.newAppointmentModalOpen = false;
+                    this.showToast('Appointment created!');
+                },
+
+                // Public Client Booking Experience
+                publicBookingStep: 1,
+                selectedPublicEvent: null,
+                publicSelectedDate: '2026-10-28',
+                publicSelectedTime: '',
+                publicForm: { name: '', email: '', phone: '', notes: '' },
+
+                selectPublicEvent(event) {
+                    this.selectedPublicEvent = event;
+                    this.publicBookingStep = 2;
+                },
+                selectPublicTime(time) {
+                    this.publicSelectedTime = time;
+                    this.publicBookingStep = 3;
+                },
+                submitPublicBooking() {
+                    const newApp = {
+                        id: Date.now(),
+                        clientName: this.publicForm.name,
+                        clientEmail: this.publicForm.email,
+                        clientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                        eventTypeName: this.selectedPublicEvent.title,
+                        date: this.publicSelectedDate,
+                        time: this.publicSelectedTime,
+                        duration: this.selectedPublicEvent.duration,
+                        status: 'confirmed',
+                        location: 'Google Meet',
+                        notes: this.publicForm.notes
+                    };
+                    this.appointments.unshift(newApp);
+                    this.publicBookingStep = 4;
+                    this.showToast('New client booking submitted!');
+                },
+                resetPublicBooking() {
+                    this.publicBookingStep = 1;
+                    this.selectedPublicEvent = null;
+                    this.publicForm = { name: '', email: '', phone: '', notes: '' };
+                },
+
+                copyBookingLink(slug) {
+                    const url = 'https://chronos.app/' + (slug || 'dr-sarah');
+                    document.execCommand('copy');
+                    this.showToast('Copied booking link: ' + url);
+                },
+
+                openBlockTimeModal() {
+                    this.showToast('Time blocked on calendar');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

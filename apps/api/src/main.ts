@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
+import { CorrelationInterceptor } from './interceptors/correlation.interceptor.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalInterceptors(new CorrelationInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   // Explicit environment-driven allow-list (never origin: true + credentials: true)
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['https://app.chronos.example'];

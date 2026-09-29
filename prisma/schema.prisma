@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SlotStatus {
+  available
+  booked
+  blocked
+}
+
+enum BookingStatus {
+  booked
+  completed
+  cancelled
+  no_show
+}
+
+enum ReminderStatus {
+  pending
+  sent
+  failed
+}
+
+enum OffsetType {
+  "24h"
+  "1h"
+}
+
+model Provider {
+  id                     String    @id @default(uuid())
+  name                   String
+  timezone               String
+  slug                   String    @unique
+  cancellationWindowHours Int
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  availabilityRules      AvailabilityRule[]
+  slots                  Slot[]
+  bookings               Booking[]
+  eventTypes             EventType[]
+  @@map("providers")
+  @@index([slug])
+}
+
+model AvailabilityRule {
+  id         String   @id @default(uuid())
+  providerId String   @map("provider_id")
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      @map("day_of_week")
+  startTime  String   @map("start_time")
+  endTime    String   @map("end_time")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  @@map("availability_rules")
+  @@index([providerId, dayOfWeek])
+}
+
+model Slot {
+  id            String   @id @default(uuid())
+  providerId    String   @map("provider_id")
+  provider      Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  slotStartUtc  DateTime @map("slot_start_utc")
+  slotEndUtc    DateTime @map("slot_end_utc")
+  status        SlotStatus @default(available)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  bookings      Booking[]
+  @@map("slots")
+  @@unique([providerId, slotStartUtc])
+  @@index([providerId, slotStartUtc])
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  slotId        String   @unique @map("slot_id")
+  slot          Slot     @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  providerId    String?  @map("provider_id")
+  clientId     String?  @map("client_id")
+  eventTypeId  String?  @map("event_type_id")
+  status        BookingStatus @default(booked)
+  version       Int      @default(0)
+  notes         String?
+  clientNotes   String?  @map("client_notes")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  @@map("bookings")
+  @@index([slotId])
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  company   String?
+  phone     String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  bookings  Booking[]
+  @@map("clients")
+  @@index([email])
+}
+
+model EventType {
+  id              String   @id @default(uuid())
+  providerId      String   @map("provider_id")
+  provider        Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title           String
+  durationMinutes Int      @map("duration_minutes")
+  price           Float?
+  location        String?
+  slug            String   @unique
+  description     String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  @@map("event_types")
+  @@index([providerId])
+  @@index([slug])
+}
+
+model ReminderJob {
+  id         String        @id @default(uuid())
+  bookingId  String        @map("booking_id")
+  booking    Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  offsetType OffsetType    @map("offset_type")
+  sentAt     DateTime?     @map("sent_at")
+  status     ReminderStatus @default(pending)
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  @@map("reminder_jobs")
+  @@unique([bookingId, offsetType])
+  @@index([status, sentAt])
+}

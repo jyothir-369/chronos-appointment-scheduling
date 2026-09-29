@@ -5,6 +5,7 @@
  */
 
 import { clock, subtractElapsed } from '@chronos/time';
+const T = (globalThis as any).Temporal;
 
 export interface BookingRequest {
   slotId: string;
@@ -26,7 +27,6 @@ export async function createBooking(
   nowUtc?: string
 ): Promise<BookingResult> {
   const { slotId, clientId, idempotencyKey, clientTimezone } = req;
-  const client = await db.connect();
   const effectiveNow = nowUtc || clock.now().toString();
 
   // 1. Idempotency check (in same transaction per §6.1)
@@ -46,24 +46,22 @@ export async function createBooking(
 
   // 2. Atomic compare-and-set on slot + booking insert in one transaction
   try {
-    await client.query('BEGIN');
-    // Lock slot row to serialize concurrent reservations (DB-authoritative)
-    await client.query('SELECT id FROM slots WHERE id = $1 FOR UPDATE', [slotId]);
+    await db.query('BEGIN');
 
     // Lock slot for update (compare-and-set); reject if booked or in past
-    const slotRes = await client.query(
+    const slotRes = await db.query(
       `UPDATE slots SET status = 'booked'
        WHERE id = $1 AND status = 'open' AND slot_start_utc > $2
        RETURNING id, provider_id, slot_start_utc`,
       [slotId, effectiveNow]
     );
     if (slotRes.rowCount === 0) {
-      await client.query('ROLLBACK');
+      await db.query('ROLLBACK');
       return { status: 409, error: 'slot_unavailable' };
     }
 
     // Insert booking; partial unique index protects second live booking
-    const bookingRes = await client.query(
+    const bookingRes = await db.query(
       `INSERT INTO bookings (slot_id, client_id, client_timezone, status)
        VALUES ($1, $2, $3, 'booked') RETURNING id`,
       [slotId, clientId, clientTimezone]
@@ -73,12 +71,10 @@ export async function createBooking(
     const offsets = [1440, 60];
     for (const off of offsets) {
       const fire = subtractElapsed(slotRes.rows[0].slot_start_utc, off);
-      const fireMs = new Date(fire).getTime(); // eslint-disable-next-line chronos/no-raw-date -- epoch compariso
-
-      const nowMs = new Date(effectiveNow).getTime(); // eslint-disable-next-line chronos/no-raw-date -- epoch compariso
-
+      const fireMs = (T?.Instant?.from(fire)?.epochMilliseconds) ?? new Date(fire).getTime();
+      const nowMs = clock.now().epochMs;
       if (fireMs > nowMs) {
-        await client.query(
+        await db.query(
           `INSERT INTO reminder_jobs (booking_id, offset_minutes, fire_at_utc, status) VALUES ($1, $2, $3, 'scheduled')`,
           [bookingRes.rows[0].id, off, fire]
         );
@@ -86,23 +82,21 @@ export async function createBooking(
     }
 
     if (idempotencyKey) {
-      await client.query(
+      await db.query(
         `INSERT INTO idempotency_keys (client_id, key, request_hash, response_status, response_body, created_at)
          VALUES ($1, $2, $3, 201, $4, now())`,
         [clientId, idempotencyKey, JSON.stringify(req), JSON.stringify({ bookingId: bookingRes.rows[0].id })]
       );
     }
 
-    await client.query('COMMIT');
+    await db.query('COMMIT');
     return { status: 201, bookingId: bookingRes.rows[0].id };
   } catch (e: any) {
-    await client.query('ROLLBACK').catch(() => {});
+    await db.query('ROLLBACK').catch(() => {});
     // Map Postgres exclusion/unique conflicts
     if (e.code === '23505' || e.code === '23P01') {
       return { status: 409, error: 'slot_unavailable' };
     }
     return { status: 400, error: e.message || 'bad_request' };
-  } finally {
-    client.release();
   }
 }
