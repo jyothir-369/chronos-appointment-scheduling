@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Shared",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@chronos/ui/*": ["packages/ui/src/*"],
+      "@chronos/config/*": ["packages/config/src/*"],
+      "@chronos/types/*": ["packages/types/src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}
