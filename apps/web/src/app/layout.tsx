@@ -1,18 +1,11 @@
-import { Inter } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import { Toaster } from "sonner";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+// Ensure tokens are loaded via global CSS import in this file
+import '../styles/tokens.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full`}>
-      <body className="h-full font-sans">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {children}
-          <Toaster position="bottom-right" />
-        </ThemeProvider>
+    <html lang="en" className="dark">
+      <body className="bg-[#080D18] text-[#F8FAFC] antialiased font-sans selection:bg-[#6366F1]/30">
+        {children}
       </body>
     </html>
   );
