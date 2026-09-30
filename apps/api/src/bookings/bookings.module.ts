@@ -5,7 +5,7 @@ import { createBooking } from './bookings.service.js';
 import { evaluateCancellation } from './lifecycle.service.js';
 import { rescheduleBooking } from './reschedule.service.js';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://chronos:chronos@localhost:5433/chronos' });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://chronos:${DATABASE_PASSWORD:-CHANGE_ME}@localhost:5433/chronos' });
 
 function extractClientFromCookie(cookie?: string): string | null {
   if (!cookie) return null;

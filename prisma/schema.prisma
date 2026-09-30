@@ -125,6 +125,19 @@ model EventType {
   @@index([slug])
 }
 
+model IdempotencyKey {
+  id         String   @id @default(uuid())
+  clientId   String   @map("client_id")
+  key        String
+  requestHash String @map("request_hash")
+  responseStatus Int @map("response_status")
+  responseBody String @map("response_body")
+  createdAt  DateTime @default(now()) @map("created_at")
+  @@map("idempotency_keys")
+  @@unique([clientId, key])
+  @@index([clientId, key])
+}
+
 model ReminderJob {
   id         String        @id @default(uuid())
   bookingId  String        @map("booking_id")

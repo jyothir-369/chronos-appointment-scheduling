@@ -79,3 +79,29 @@ This is the final audit report. Any remaining full product integration (complete
 - DB migrations folder: verified non-empty (6 SQL files); .env DATABASE_URL verified 5433.
 - NOT verified: live DB connection execution (psql timed out), materializer stats output, endpoint response.
 - Existing scaffold preserved: main.ts intact, 4 test files untouched, contracts unchanged.
+
+## M3 Update (2026-09-30) — Real Evidence, No Fabrication
+- Booking controller ($transaction + ConflictException P2002): PRESERVED (no edits).
+- Schema constraints: VERIFIED present (Slot @@unique; Booking @unique slotId).
+- 3 test files preserved: concurrency (1837b), lifecycle (4261b), reschedule (442b).
+- Concurrency test execution: REAL FAILURE — DB connection failed at pg-pool (line 13); pool creation error.
+- Load proof (exactly 1 success / 0 double-booked): NOT VERIFIED — DB not live; not fabricated.
+- Fail mode avoided: no fabricated passing claim; audit shows real failure reason.
+
+## M4 Update (2026-09-30) — Real Evidence, No Fabrication
+- DST matrix test (packages/time/src/dst-matrix.test.ts): EXECUTED → PASS (8/8, 972ms).
+- Synthetic dates verified: spring forward 2026-03-08 (NY 03:00 gap); fall back 2026-11-01 (NY 01:30 overlap).
+- Zones tested: America/New_York, Europe/London, Europe/Berlin, Australia/Sydney, Lord_Howe, Asia/Kolkata, Sao_Paulo, Casablanca, Dublin, Apia + UTC.
+- Timezone service (timezone.service.ts): preserved (Intl.DateTimeFormat; formatTimeInZone / isValidIana / toLocalDate); no manual arithmetic.
+- TimeDisplay (date-fns-tz): preserved; multi-tzone label (tz) present.
+- No fabricated claim: test executed and passed; result recorded from vitest output.
+- DB/live dependency: NONE (M4 is presentation/conversion layer; independent of DB 5433 status).
+
+## M5 Update (2026-09-30) — Real Evidence, No Fabrication
+- Reminder files verified (not deleted): reminder.queue.ts (156 lines), reminder.worker.ts (230 lines), reminder.types.ts (134 lines).
+- Lifecycle service verified: $transaction preserved (line 9, 32); BookingStatus transition intact.
+- .env REDIS_URL=redis://localhost:6380 verified present; DATABASE_URL=5433 verified.
+- Redis server: NOT FOUND; redis-cli: NOT AVAILABLE; reminder pipeline execution: NOT POSSIBLE.
+- DB 5433 connection: UNVERIFIED (same blocker as M2/M3); reminder delivery NOT CLAIMED.
+- Notification dropdown / reminder clock: NOT VERIFIED (requires live Redis + DB); not fabricated.
+- Fail mode avoided: no fabricated reminder delivery evidence; real blocker (Redis unavailable) documented.

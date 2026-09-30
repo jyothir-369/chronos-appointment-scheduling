@@ -2,18 +2,20 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: chronos
-      POSTGRES_PASSWORD: chronos
-      POSTGRES_DB: chronos
+      POSTGRES_USER: ${POSTGRES_USER:-chronos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
+      POSTGRES_DB: ${POSTGRES_DB:-chronos}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U chronos -d chronos"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chronos} -d ${POSTGRES_DB:-chronos}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - chronos-net
 
   redis:
     image: redis:7-alpine
@@ -22,17 +24,26 @@ services:
              echo "appendonly yes" >> /etc/redis/redis.conf &&
              echo "appendfsync everysec" >> /etc/redis/redis.conf &&
              echo "maxmemory-policy noeviction" >> /etc/redis/redis.conf &&
-             redis-server /etc/redis/redis.conf'
+             echo "requirepass ${REDIS_PASSWORD:-localdev}" >> /etc/redis/redis.conf &&
+             redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-localdev}'
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-localdev}
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-localdev}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - chronos-net
 
 volumes:
   postgres-data:
   redis-data:
+
+networks:
+  chronos-net:
+    driver: bridge
