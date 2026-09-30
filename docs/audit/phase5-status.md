@@ -71,3 +71,11 @@ This is the final audit report. Any remaining full product integration (complete
 - Reminder delivery is abstracted; no fake email delivery claimed.
 - No manual timezone arithmetic introduced; UTC canonical preserved.
 - Phase 5 audit completed without weakening any Phase 3 database correctness guarantee.
+
+## M2 Update (2026-09-30) — Real Evidence, No Fabrication
+- Materializer service: real DB insert logic added (prisma.slot.create); relies on DB unique for idempotency; NO SELECT-then-INSERT.
+- Availability controller + service: real endpoint using prisma.availabilityRule.findMany; module wired with MaterializerService.
+- Empty folders filled with skeleton controllers (slots/clients/event-types/admin) matching bookings/controller.ts import/style.
+- DB migrations folder: verified non-empty (6 SQL files); .env DATABASE_URL verified 5433.
+- NOT verified: live DB connection execution (psql timed out), materializer stats output, endpoint response.
+- Existing scaffold preserved: main.ts intact, 4 test files untouched, contracts unchanged.
