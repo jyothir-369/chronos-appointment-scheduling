@@ -1,44 +1,42 @@
-import { Controller, Post, Body, ConflictException, HttpCode, HttpStatus } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Controller, Post, Body, Headers, ConflictException, HttpCode, HttpStatus, Get, Param } from '@nestjs/common';
+import { Pool } from 'pg';
+import { createBooking, BookingRequest } from './bookings.service.js';
+import { clock } from '@chronos/time';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://chronos:${DATABASE_PASSWORD:-CHANGE_ME}@localhost:5433/chronos' });
+
+function extractClientFromCookie(cookie?: string): string | null {
+  if (!cookie) return null;
+  const match = cookie.match(/chronos_session=([^;]+)/);
+  return match ? match[1] : null;
+}
 
 @Controller('bookings')
 export class BookingsController {
-  private prisma = new PrismaClient();
-
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() body: { slot_id: string; client_name: string; email: string; phone?: string; notes?: string; event_type_id?: string }) {
-    return this.prisma.$transaction(async (tx) => {
-      // Verify slot exists and is available; rely on DB constraints, not SELECT-then-INSERT
-      const slot = await tx.slot.findUnique({ where: { id: body.slot_id }, include: { provider: true, bookings: true } });
-      if (!slot || slot.status !== 'available') {
-        throw new ConflictException('Slot not available');
-      }
-      const client = await tx.client.upsert({
-        where: { email: body.email },
-        create: { email: body.email, name: body.client_name, phone: body.phone || null },
-        update: { name: body.client_name, phone: body.phone || null },
-      });
-      try {
-        const booking = await tx.booking.create({
-          data: {
-            slotId: body.slot_id,
-            providerId: slot.providerId,
-            clientId: client.id,
-            eventTypeId: body.event_type_id || null,
-            status: 'booked',
-            notes: body.notes || null,
-          },
-        });
-        await tx.slot.update({ where: { id: body.slot_id }, data: { status: 'booked' } });
-        return booking;
-      } catch (e: any) {
-        // UNIQUE(slot_id) violation = concurrent booking lost the race
-        if (e.code === 'P2002') {
-          throw new ConflictException('Slot just taken — please pick another.');
-        }
-        throw e;
-      }
-    });
+  async createBooking(
+    @Body() body: { slot_id: string; client_name?: string; email?: string; notes?: string; event_type_id?: string; idempotency_key?: string },
+    @Headers('idempotency-key') idempotencyKey?: string,
+    @Headers('cookie') cookie?: string
+  ) {
+    const sessionClientId = extractClientFromCookie(cookie);
+    const req: BookingRequest = {
+      slotId: body.slot_id,
+      clientId: sessionClientId || body.email || 'anonymous',
+      idempotencyKey: idempotencyKey || body.idempotency_key,
+      clientTimezone: 'UTC',
+    };
+    const result = await createBooking(pool, req, clock.now().toString());
+    if (result.status === 201) return { status: 201, bookingId: result.bookingId, replay: result.replay };
+    if (result.status === 409) throw new ConflictException(result.error || 'Slot unavailable');
+    if (result.status === 422) throw new ConflictException(result.error || 'Idempotency conflict');
+    throw new ConflictException(result.error || 'Booking failed');
+  }
+
+  @Get(':id')
+  async getBooking(@Param('id') id: string, @Headers('cookie') cookie?: string) {
+    // Basic ownership check placeholder
+    return { id, status: 'fetched' };
   }
 }

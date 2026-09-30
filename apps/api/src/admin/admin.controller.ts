@@ -1,8 +1,10 @@
-import { Controller, Get, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-@Controller('$NAME')
-export class $NAMEController {
-  private prisma = new PrismaClient();
-  @Get()
-  async findAll() { return this.prisma.$NAME.findMany(); }
+import { Controller, Get, UseGuards, ForbiddenException } from '@nestjs/common';
+// Placeholder admin controller — authorization required, no public exposure
+@Controller('admin')
+export class AdminController {
+  @Get('status')
+  async status() {
+    // Admin endpoint disabled until properly implemented with authorization
+    throw new ForbiddenException('Admin endpoint not implemented');
+  }
 }
