@@ -1,7 +1,5 @@
-/**
- * Reschedule endpoint (§2.2) — atomic cancel + rebook in one transaction
- */
 import { Pool } from 'pg';
+/* Reschedule endpoint */
 import { clock, subtractElapsed } from '@chronos/time';
 
 export interface RescheduleRequest {
@@ -14,14 +12,14 @@ export interface RescheduleRequest {
 }
 
 export interface RescheduleResult {
-  status: 201 | 404 | 409 | 412 | 422;
+  status: 201 | 400 | 404 | 409 | 412 | 422;
   bookingId?: string;
   error?: string;
   replay?: boolean;
 }
 
 export async function rescheduleBooking(
-  pool: Pool,
+  pool: any,
   req: RescheduleRequest,
   nowUtc?: string
 ): Promise<RescheduleResult> {

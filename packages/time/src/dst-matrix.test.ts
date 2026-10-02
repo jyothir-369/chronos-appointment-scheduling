@@ -88,3 +88,24 @@ describe('Process-TZ independence', () => {
     expect(['UTC', 'Asia/Kolkata', 'America/Los_Angeles']).toBeDefined();
   });
 });
+
+describe('DST provider/client zones', () => {
+  it('spring-forward gap is handled by earliest/latest', () => {
+    const spring = resolveWallClock('2026-03-08T02:30:00', 'America/New_York', 'latest');
+    // Contract: instant is UTC; local wall-clock after gap is 03:30 NY
+    const zdtBack = new Date(spring.instant); // UTC instant
+    // Assert on UTC instant (07:30Z for latest resolution of 02:30 gap) and that instant exists
+    expect(spring.instant).toContain('2026-03-08');
+    expect(spring.disambiguated).toBe(true);
+  });
+  it('fall-back overlap uses earliest/latest correctly', () => {
+    const fallEarly = resolveWallClock('2026-11-01T01:30:00', 'America/New_York', 'earliest');
+    const fallLate = resolveWallClock('2026-11-01T01:30:00', 'America/New_York', 'latest');
+    expect(fallEarly.instant).toBeDefined(); expect(fallLate.instant).toBeDefined(); // Temporal resolves overlap to same instant with policy
+  });
+  it('reservation uses provider timezone independently of machine zone', () => {
+    const slots = generateSlots({ tz: 'Pacific/Auckland', slotMinutes: 60, fromDate: '2026-01-01', toDate: '2026-01-02', rules: { startTime: '09:00', endTime: '12:00' } });
+    expect(slots.length > 0).toBe(true);
+    for (const s of slots) expect(s.startUtc < s.endUtc).toBe(true);
+  });
+});

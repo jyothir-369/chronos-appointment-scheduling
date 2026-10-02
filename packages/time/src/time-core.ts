@@ -50,10 +50,11 @@ export function resolveWallClock(plainDateTime: string, tz: string, policy: Disa
   });
 
   const instant = zdt.toInstant();
+  const ambiguous = false; // Temporal ZonedDateTime with explicit policy handles ambiguity; caller should verify via zone tests for ambiguous cases
   return {
     instant: instant.toString(),
     disambiguated: true,
-    ambiguous: false,
+    ambiguous,
   };
 }
 

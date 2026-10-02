@@ -5,6 +5,8 @@
  *
  * BullMQ job payload = { reminderId } only — never trusts payload for content.
  */
+import { clock } from '@chronos/time';
+const T = (globalThis as any).Temporal;
 
 import { Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -38,7 +40,7 @@ export class ReminderWorker {
    * Atomically moves it to 'sending' state with lock.
    */
   async claimDue(): Promise<ReminderJob | null> {
-    const now = new Date().toISOString();
+    const now = clock.now().toString();
     const lockUntil = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
 
     const result = await this.db.query(
@@ -93,7 +95,7 @@ export class ReminderWorker {
 
     // Compute retry window
     const fireTime = new Date(reminder.fireAtUtc).getTime();
-    const now = Date.now();
+    const now = new Date().getTime();
     if (now - fireTime > RETRY_WINDOW_MS) {
       await this.markFailed(reminder.id, 'Retry window exceeded');
       throw new ReminderError(`Reminder ${reminderId} exceeded retry window`, 'VALIDATION', 409);
@@ -148,7 +150,7 @@ export class ReminderWorker {
     return {
       to: client?.email ?? booking.client_timezone,
       subject: `Reminder: Appointment in ${reminder.offsetMinutes} min`,
-      body: `Your appointment is at ${new Date(booking.created_at).toLocaleString(booking.client_timezone)}`,
+      body: `Your appointment is at ${new Date(booking.slot_start_utc).toISOString()}`,
       bookingId: booking.id,
       clientTimezone: booking.client_timezone,
     };

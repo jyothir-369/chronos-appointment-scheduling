@@ -24,7 +24,7 @@ export class BookingsController {
     const req: BookingRequest = {
       slotId: body.slot_id,
       clientId: sessionClientId || body.email || 'anonymous',
-      idempotencyKey: idempotencyKey || body.idempotency_key,
+      ...(idempotencyKey !== undefined || body.idempotency_key !== undefined ? { idempotencyKey: idempotencyKey || body.idempotency_key } : {}),
       clientTimezone: 'UTC',
     };
     const result = await createBooking(pool, req, clock.now().toString());
