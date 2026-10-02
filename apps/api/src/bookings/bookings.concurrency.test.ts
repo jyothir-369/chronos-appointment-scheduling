@@ -9,7 +9,7 @@ describe('Phase 4 — Concurrent booking proof (DB authority, strict)', () => {
     pool = new Pool(DB);
     // Create deterministic open slot in a transaction
     await pool.query('BEGIN');
-    const r = await pool.query("INSERT INTO slots (id, provider_id, slot_start_utc, slot_end_utc, status, display_tz) SELECT gen_random_uuid(), (SELECT id FROM providers WHERE name='Dr. Chronos'), now()+interval '3 days', now()+interval '3 days 1 hour', 'open', 'America/New_York' RETURNING id");
+    const r = await pool.query("INSERT INTO slots (id, provider_id, slot_start_utc, slot_end_utc, status, display_tz) SELECT gen_random_uuid(), (SELECT id FROM providers WHERE name='Dr. Chronos'), '2026-12-10 14:00:00+00', '2026-12-10 15:00:00+00', 'open', 'America/New_York' RETURNING id");
     slotId = r.rows[0].id;
     await pool.query('COMMIT');
   });
@@ -26,14 +26,14 @@ describe('Phase 4 — Concurrent booking proof (DB authority, strict)', () => {
   it('exactly 1 booking succeeds and exactly 1 DB row exists (20 iterations to expose races)', async () => {
     for (let iter = 0; iter < 20; iter++) {
       // Ensure slot open at start of each iteration
-      await pool.query("UPDATE slots SET status='open' WHERE id=$1", [slotId]);
+      await pool.query("UPDATE slots SET status='open', slot_start_utc='2026-12-10 14:00:00+00', slot_end_utc='2026-12-10 15:00:00+00' WHERE id=$1", [slotId]);
       await pool.query("DELETE FROM bookings WHERE slot_id=$1", [slotId]);
       
       const clients = await Promise.all(Array.from({length:5}, () => pool.connect()));
       const promises = clients.map(async (c: any) => {
         try {
           await c.query('BEGIN');
-          await c.query("UPDATE slots SET status='booked' WHERE id=$1 AND status='open' AND slot_start_utc > now() RETURNING id", [slotId]);
+          await c.query("UPDATE slots SET status='booked' WHERE id=$1 AND status='open' AND slot_start_utc > '2026-01-01' RETURNING id", [slotId]);
           await c.query("INSERT INTO bookings (slot_id, client_id, status) VALUES ($1, 'concurrent', 'booked') RETURNING id", [slotId]);
           await c.query('COMMIT');
           return { status: 201, bookingId: 'created' };
@@ -60,7 +60,7 @@ describe('Phase 4 — Concurrent booking proof (DB authority, strict)', () => {
       expect(conflicts.length).toBe(4);
       
       // Roll back for next iteration: release slot, delete booking
-      await pool.query("UPDATE slots SET status='open' WHERE id=$1", [slotId]);
+      await pool.query("UPDATE slots SET status='open', slot_start_utc='2026-12-10 14:00:00+00', slot_end_utc='2026-12-10 15:00:00+00' WHERE id=$1", [slotId]);
       await pool.query("DELETE FROM bookings WHERE slot_id=$1", [slotId]);
     }
   });
