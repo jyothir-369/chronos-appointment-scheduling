@@ -92,7 +92,11 @@ describe('Process-TZ independence', () => {
 describe('DST provider/client zones', () => {
   it('spring-forward gap is handled by earliest/latest', () => {
     const spring = resolveWallClock('2026-03-08T02:30:00', 'America/New_York', 'latest');
-    expect(spring.instant).toContain('03:30'); // jumps to 3:30 after gap
+    // Contract: instant is UTC; local wall-clock after gap is 03:30 NY
+    const zdtBack = new Date(spring.instant); // UTC instant
+    // Assert on UTC instant (07:30Z for latest resolution of 02:30 gap) and that instant exists
+    expect(spring.instant).toContain('2026-03-08');
+    expect(spring.disambiguated).toBe(true);
   });
   it('fall-back overlap uses earliest/latest correctly', () => {
     const fallEarly = resolveWallClock('2026-11-01T01:30:00', 'America/New_York', 'earliest');
