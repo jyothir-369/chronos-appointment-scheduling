@@ -1,8 +1,14 @@
-import { Controller, Get, NotFoundException } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-@Controller('$NAME')
-export class $NAMEController {
-  private prisma = new PrismaClient();
+
+@Controller('slots')
+export class SlotsController {
+  private readonly prisma = new PrismaClient();
+
   @Get()
-  async findAll() { return this.prisma.$NAME.findMany(); }
+  async findAll() {
+    return this.prisma.slot.findMany({
+      orderBy: { slotStartUtc: 'asc' },
+    });
+  }
 }

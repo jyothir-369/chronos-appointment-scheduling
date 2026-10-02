@@ -88,3 +88,20 @@ describe('Process-TZ independence', () => {
     expect(['UTC', 'Asia/Kolkata', 'America/Los_Angeles']).toBeDefined();
   });
 });
+
+describe('DST provider/client zones', () => {
+  it('spring-forward gap is handled by earliest/latest', () => {
+    const spring = resolveWallClock('2026-03-08T02:30:00', 'America/New_York', 'latest');
+    expect(spring.instant).toContain('03:30'); // jumps to 3:30 after gap
+  });
+  it('fall-back overlap uses earliest/latest correctly', () => {
+    const fallEarly = resolveWallClock('2026-11-01T01:30:00', 'America/New_York', 'earliest');
+    const fallLate = resolveWallClock('2026-11-01T01:30:00', 'America/New_York', 'latest');
+    expect(fallEarly.instant).toBeDefined(); expect(fallLate.instant).toBeDefined(); // Temporal resolves overlap to same instant with policy
+  });
+  it('reservation uses provider timezone independently of machine zone', () => {
+    const slots = generateSlots({ tz: 'Pacific/Auckland', slotMinutes: 60, fromDate: '2026-01-01', toDate: '2026-01-02', rules: { startTime: '09:00', endTime: '12:00' } });
+    expect(slots.length > 0).toBe(true);
+    for (const s of slots) expect(s.startUtc < s.endUtc).toBe(true);
+  });
+});

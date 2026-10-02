@@ -3,6 +3,10 @@ packages:
   - "apps/*"
   - "tools/*"
 allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': false
   esbuild: false
   msgpackr-extract: false
+  prisma: false
+  workerd@1.20260901.1: true
 ignoreWorkspaceRootCheck: true

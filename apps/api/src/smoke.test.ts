@@ -1,7 +1,8 @@
+/// <reference types="vitest" />
 import { test, expect } from 'vitest';
 
 test('app module exports AppModule', async () => {
-  const mod = await import('./app.module.js');
+  const mod = await import('./app.module');
   expect(mod.AppModule).toBeDefined();
 });
 

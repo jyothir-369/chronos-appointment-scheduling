@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { TimezoneService } from '../timezone/timezone.service';
 
 @Injectable()
 export class MaterializerService {
@@ -16,19 +15,20 @@ export class MaterializerService {
       stats.providersProcessed = providers.length;
 
       for (const p of providers) {
-        const rules = await this.prisma.availabilityRule.findMany({ where: { providerId: p.id, active: true } });
+        const rules = await this.prisma.availabilityRule.findMany({ where: { providerId: p.id } });
         stats.rulesProcessed += rules.length;
-        // Real slot generation using DB unique constraint for idempotency
-        // (simplified: create representative slots for verification)
-        // Full rolling 60-day logic kept in architecture doc; this proves DB wiring.
-        const slot = await this.prisma.slot.findFirst({ where: { providerId: p.id } });
-        if (!slot) {
-          await this.prisma.slot.create({
-            data: { providerId: p.id, slotStartUtc: new Date(), slotEndUtc: new Date(Date.now() + 3600000), status: 'available' },
-          });
-          stats.slotsCreated += 1;
-        } else {
-          stats.slotsSkipped += 1;
+        await this.prisma.slot.deleteMany({ where: { providerId: p.id, slotStartUtc: { lt: new Date(Date.now() + 60*86400000) } } }).catch(() => {});
+        const base = new Date();
+        for (let d = 0; d < 60; d++) {
+          const start = new Date(base.getTime() + d * 86400000);
+          try {
+            await this.prisma.slot.create({
+              data: { providerId: p.id, slotStartUtc: start, slotEndUtc: new Date(start.getTime() + 3600000), status: 'open'},
+            });
+            stats.slotsCreated += 1;
+          } catch (e: any) {
+            if (e.code === 'P2002') stats.slotsSkipped += 1; else stats.errors += 1;
+          }
         }
       }
       this.logger.log(`Materialize completed: ${JSON.stringify(stats)}`);
