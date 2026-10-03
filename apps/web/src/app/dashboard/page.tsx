@@ -38,7 +38,7 @@ export default function DashboardPage() {
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning, Sarah 👋</h1>
             <p className="text-sm text-slate-400 mt-1">Today's schedule — {upcoming.length} upcoming appointment{upcoming.length === 1 ? "" : "s"}</p>
           </div>
           <div className="flex items-center gap-2">
