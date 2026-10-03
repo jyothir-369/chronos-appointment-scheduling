@@ -1,13 +1,33 @@
+"use client";
 import { useState, useEffect } from 'react';
 export default function SettingsPage() {
-  const [provider, setProvider] = useState<{ cancellationWindowHours?: number; timezone?: string } | null>(null);
+  const [provider, setProvider] = useState<{ id?: string; name?: string; cancellationWindowHours?: number; timezone?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [providerId, setProviderId] = useState<string>('');
   useEffect(() => {
-    fetch('/api/providers/me').then(r => r.ok ? r.json() : null).then(setProvider).finally(() => setLoading(false));
+    // In a real app with session, get provider ID from session/user context.
+    // Using a placeholder for verified PATCH endpoint demonstration.
+    fetch('/api/providers/me', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: any) => {
+        if (d?.id) setProviderId(d.id);
+        setProvider(d);
+      })
+      .finally(() => setLoading(false));
   }, []);
   const save = async () => {
-    await fetch('/api/providers/me', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(provider) });
+    if (!providerId) return;
+    await fetch(`/api/providers/${providerId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: provider?.name,
+        timezone: provider?.timezone,
+        cancellationWindowHours: provider?.cancellationWindowHours,
+      }),
+    });
     setSaved(true);
   };
   if (loading) return <main className="p-6"><p>Loading settings...</p></main>;

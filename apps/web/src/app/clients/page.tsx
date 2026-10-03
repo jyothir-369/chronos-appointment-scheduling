@@ -1,5 +1,7 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { Client } from '@chronos/contracts';
+import { apiFetch } from '../../lib/api';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -7,10 +9,10 @@ export default function ClientsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/clients')
-      .then(r => { if (!r.ok) throw new Error('Failed'); return r.json(); })
-      .then(setClients)
-      .catch(e => setError(e.message))
+    apiFetch('/clients', { credentials: 'include' })
+      .then((r) => { if (!r.ok) throw new Error('Failed to load clients'); return r.json(); })
+      .then((data) => setClients(Array.isArray(data) ? data : []))
+      .catch((e) => setError(e.message || 'Failed'))
       .finally(() => setLoading(false));
   }, []);
 
