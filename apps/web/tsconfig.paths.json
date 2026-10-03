@@ -1,0 +1,1 @@
+{"compilerOptions":{"baseUrl":".","paths":{"@chronos/mock-data":["../../packages/mock-data/src/index.ts"]}},"include":["src"]}
