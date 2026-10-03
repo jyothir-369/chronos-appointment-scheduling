@@ -139,8 +139,8 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
   );
 }
 
-function AppointmentRow({ booking }: { booking: any }) {
-  // Status logic: only PENDING gets Confirm/Decline; CANCELLED shows no actions; BOOKED -> Confirmed with Join; CANCELLED -> Badge only
+  // Status model: backend BOOKED/COMPLETED/CANCELLED/NO_SHOW; UI: Upcoming/Completed/Cancelled/No-show; no Confirm/Decline (endpoints missing); Join for upcoming video; Call for upcoming phone
+  // Status: backend BOOKED/COMPLETED/CANCELLED/NO_SHOW; UI Upcoming/Completed/Cancelled/No-show; no Confirm/Decline (endpoints missing); Join video; Call phone
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
   const actions = booking.status === "confirmed" ? (hasMeeting ? <a href={booking.meetingUrl || booking.meeting_url} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join</a>) : <div className="flex gap-1"><a href="#" className="px-2 py-1 rounded-md bg-emerald-600/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/20">Confirm</a><a href="#" className="px-2 py-1 rounded-md bg-rose-600/10 text-rose-300 text-xs font-semibold hover:bg-rose-600/20">Decline</a></div>;
