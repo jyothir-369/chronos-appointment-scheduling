@@ -1,15 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { deriveDashboardMetrics } from "@chronos/mock-data/utils";
+import { deriveDashboardMetrics, AGGREGATES } from "@chronos/mock-data/utils";
 
-describe("deriveDashboardMetrics", () => {
-  it("derives total, percent change, today count, value, paid count, occupancy, busy duration", () => {
-    const metrics = deriveDashboardMetrics([] as any);
-    expect(typeof metrics.total).toBe("number");
-    expect(typeof metrics.percentChange).toBe("number");
-    expect(typeof metrics.todayCount).toBe("number");
-    expect(typeof metrics.estimatedValue).toBe("number");
-    expect(typeof metrics.paidCount).toBe("number");
-    expect(typeof metrics.occupancy).toBe("number");
-    expect(typeof metrics.busyDuration).toBe("number");
+describe("dashboard metrics", () => {
+  it("matches exact seed aggregates", () => {
+    const m = deriveDashboardMetrics();
+    expect(m.total).toBe(142);
+    expect(m.previousMonthTotal).toBe(124);
+    expect(m.percentChange).toBe(14.5);
+    expect(m.todayCount).toBe(2);
+    expect(m.estimatedValue).toBe(4850);
+    expect(m.paidCount).toBe(30);
+    expect(m.occupancy).toBe(88);
   });
 });
