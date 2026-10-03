@@ -2,7 +2,6 @@
 import React from "react";
 import { AppShell } from "../components/AppShell";
 import { Badge } from "../components/Badge";
-import { States } from "../components/States"; // reuse if needed; we'll import EmptyState/LoadingState individually
 import { apiFetch } from "../../lib/api";
 import { Settings, User, Bell, Shield, Palette, CreditCard, Link2, Check, AlertCircle, Sparkles, Clock } from "lucide-react";
 

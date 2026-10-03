@@ -100,7 +100,7 @@ export default function DashboardPage() {
   );
 }
 
-function KpiCard({ label, value, icon: Icon, empty }: { label: string; value: string; icon: React.ComponentType<{ size?: number }>; empty?: boolean }) {
+function KpiCard({ label, value, icon: Icon, empty }: { label: string; value: string; icon: React.ComponentType<{ size?: number; className?: string }>; empty?: boolean }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm hover:shadow-md transition">
       <div className="flex items-center justify-between mb-3">
