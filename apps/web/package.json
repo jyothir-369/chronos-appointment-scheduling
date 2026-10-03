@@ -9,6 +9,8 @@
     "test": "echo 'Phase 0: stub web tests'"
   },
   "dependencies": {
+    "@chronos/contracts": "workspace:*",
+    "@chronos/mock-data": "workspace:*",
     "@tailwindcss/postcss": "^4.3.3",
     "autoprefixer": "^10.6.1",
     "clsx": "^2.1.1",
@@ -25,6 +27,7 @@
     "node": ">=26.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/react": "19.3.0"
   }
 }

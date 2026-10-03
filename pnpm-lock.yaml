@@ -215,10 +215,10 @@ importers:
         specifier: ^12.0.0
         version: 12.0.0(@nestjs/common@12.1.1(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/core@12.1.1)(bullmq@5.81.5(supports-color@7.2.0))
       '@nestjs/common':
-        specifier: ^12.0.0
+        specifier: ^12.1.1
         version: 12.1.1(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
       '@nestjs/core':
-        specifier: ^12.0.0
+        specifier: ^12.1.1
         version: 12.1.1(@nestjs/common@12.1.1(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0))(@nestjs/microservices@12.1.1)(@nestjs/platform-express@12.1.1)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/microservices':
         specifier: ^12.0.0
@@ -302,6 +302,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@chronos/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@chronos/mock-data':
+        specifier: workspace:*
+        version: link:../../packages/mock-data
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3
@@ -336,6 +342,9 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.63.0
+        version: 1.63.0
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -369,6 +378,8 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+
+  packages/mock-data: {}
 
   packages/time:
     devDependencies:
