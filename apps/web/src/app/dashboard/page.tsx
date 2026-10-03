@@ -33,6 +33,17 @@ export default function DashboardPage() {
     try { await navigator.clipboard.writeText("https://chronos.app/book"); } catch {}
   };
 
+  const handleRetry = () => {
+    setLoading(true);
+    setError("");
+    apiFetch("/bookings", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then((data) => setBookings(Array.isArray(data) ? data : []))
+      .catch((e) => setError(e?.message || "Failed to load"))
+      .finally(() => setLoading(false));
+  };
+
+
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
@@ -62,7 +73,18 @@ export default function DashboardPage() {
           <section className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-xl shadow-black/20">
             <h2 className="text-xl font-extrabold tracking-tight text-white mb-4">Today's Schedule</h2>
             {loading && <LoadingState />}
-            {error && <div className="rounded-2xl border border-rose-900 bg-rose-950/40 p-6 text-rose-200 flex items-start gap-3"><AlertCircle size={20} />{error}</div>}
+            {error && (
+              <div className="rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-sm text-slate-300 flex flex-col items-start gap-3">
+                <div className="flex items-start gap-3 text-rose-200">
+                  <AlertCircle size={20} />
+                  <div>
+                    <div className="font-semibold">Could not load schedule</div>
+                    <div className="text-sm text-slate-400">The backend at localhost:3001 is unreachable. Your data is safe — try again when the service is back.</div>
+                  </div>
+                </div>
+                <button onClick={handleRetry} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition">Retry</button>
+              </div>
+            )}
             {!loading && !error && upcoming.length === 0 && <EmptyState icon={Sparkles} title="No upcoming appointments" message="Schedule your first booking to see it here." />}
             {!loading && !error && upcoming.length > 0 && (
               <div className="space-y-3">
