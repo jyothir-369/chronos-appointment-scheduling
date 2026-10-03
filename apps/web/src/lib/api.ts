@@ -1,11 +1,10 @@
-import { USE_MOCK, getBookings, getWorkspace, getRecentActivity } from "@chronos/mock-data";
+import { USE_MOCK, getBookings, getWorkspace } from "@chronos/mock-data";
 
 export async function apiFetch(path: string, opts?: RequestInit & { idempotencyKey?: string }) {
-  if (USE_MOCK && typeof window !== "undefined") {
+  const isMock = USE_MOCK === true && process.env.NODE_ENV !== "production";
+  if (isMock && typeof window !== "undefined") {
     if (path === "/bookings") return Response.json(getBookings());
     if (path === "/providers/me") return Response.json(getWorkspace());
-    if (path === "/clients") return Response.json([]);
-    if (path === "/event-types") return Response.json([]);
     return Response.json({});
   }
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -16,7 +15,7 @@ export async function apiFetch(path: string, opts?: RequestInit & { idempotencyK
       credentials: "include",
     });
   } catch {
-    if (USE_MOCK) {
+    if (isMock) {
       if (path === "/bookings") return Response.json(getBookings());
       if (path === "/providers/me") return Response.json(getWorkspace());
       return Response.json({});

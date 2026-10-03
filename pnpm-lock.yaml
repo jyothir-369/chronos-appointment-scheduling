@@ -302,6 +302,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@chronos/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@chronos/mock-data':
+        specifier: workspace:*
+        version: link:../../packages/mock-data
       '@tailwindcss/postcss':
         specifier: ^4.3.3
         version: 4.3.3
@@ -369,6 +375,8 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+
+  packages/mock-data: {}
 
   packages/time:
     devDependencies:

@@ -19,7 +19,9 @@
     "postcss": "^8.5.28",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "@chronos/mock-data": "workspace:*",
+    "@chronos/contracts": "workspace:*"
   },
   "engines": {
     "node": ">=26.0.0"

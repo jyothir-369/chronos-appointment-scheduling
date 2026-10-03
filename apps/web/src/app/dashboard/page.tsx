@@ -140,7 +140,6 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
 function AppointmentRow({ booking }: { booking: any }) {
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
-  const locIcon = loc === "video" ? Video : loc === "phone" ? Phone : MapPin;
   const actions = booking.status === "confirmed" ? (hasMeeting ? <a href={booking.meetingUrl || booking.meeting_url} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join</a>) : <div className="flex gap-1"><a href="#" className="px-2 py-1 rounded-md bg-emerald-600/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/20">Confirm</a><a href="#" className="px-2 py-1 rounded-md bg-rose-600/10 text-rose-300 text-xs font-semibold hover:bg-rose-600/20">Decline</a></div>;
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-[#0F172A] border border-white/5 hover:border-white/10 transition">
@@ -149,7 +148,7 @@ function AppointmentRow({ booking }: { booking: any }) {
         <div>
           <div className="font-bold text-white text-sm">{booking.clientName || "Client"}</div>
           <div className="text-xs text-slate-400 mt-0.5">{new Date(booking.slot_start_utc || "").toLocaleString("en-US", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })}</div>
-          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><span className="uppercase tracking-wide">{booking.eventType || "Event"}</span> · <span className="flex items-center gap-1"><locIcon size={10} /> {loc}</span></div>
+          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><span className="uppercase tracking-wide">{booking.eventType || "Event"}</span> · <span className="flex items-center gap-1">{loc}</span></div>
           <div className="text-xs text-slate-500">{booking.clientName ? `Client: ${booking.clientName}` : "—"}</div>
         </div>
       </div>
