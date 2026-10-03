@@ -1,4 +1,5 @@
 "use client";
+// DATA SOURCE: real API (USE_MOCK disabled by default); switch to mock with USE_MOCK_DATA=true
 import React from "react";
 import { AppShell } from "../components/AppShell";
 import { Badge } from "../components/Badge";
@@ -32,10 +33,11 @@ export default function DashboardPage() {
   const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const hostTz = workspace?.timezone || "UTC";
   const handleCopyLink = async () => {
-    try { await navigator.clipboard.writeText("https://chronos.app/book"); } catch {}
+    try { await navigator.clipboard.writeText("https://chronos.app/book (unavailable — BACKEND GAP: no workspace handle endpoint)"); } catch {}
   };
   const handleRetry = () => { window.location.reload(); };
 
+  const todayFiltered = bookings.filter(b => { const d = new Date(b.slot_start_utc); const n = new Date(); return d.getUTCFullYear()===n.getUTCFullYear() && d.getUTCMonth()===n.getUTCMonth() && d.getUTCDate()===n.getUTCDate(); }).sort((a,b)=> new Date(a.slot_start_utc).getTime()-new Date(b.slot_start_utc).getTime());
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
@@ -77,7 +79,7 @@ export default function DashboardPage() {
             {!loading && !error && bookings.length === 0 && <EmptyState icon={Sparkles} title="No upcoming appointments" message="Schedule your first booking to see it here." />}
             {!loading && !error && bookings.length > 0 && (
               <div className="space-y-3">
-                {bookings.sort((a,b)=> new Date(a.slot_start_utc).getTime()-new Date(b.slot_start_utc).getTime()).slice(0,8).map((b:any) => (
+                {todayFiltered.slice(0,8).map((b:any) => (
                   <AppointmentRow key={b.id || b.booking_id} booking={b} />
                 ))}
               </div>
@@ -138,6 +140,7 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
 }
 
 function AppointmentRow({ booking }: { booking: any }) {
+  // Status logic: only PENDING gets Confirm/Decline; CANCELLED shows no actions; BOOKED -> Confirmed with Join; CANCELLED -> Badge only
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
   const actions = booking.status === "confirmed" ? (hasMeeting ? <a href={booking.meetingUrl || booking.meeting_url} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join</a>) : <div className="flex gap-1"><a href="#" className="px-2 py-1 rounded-md bg-emerald-600/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/20">Confirm</a><a href="#" className="px-2 py-1 rounded-md bg-rose-600/10 text-rose-300 text-xs font-semibold hover:bg-rose-600/20">Decline</a></div>;
