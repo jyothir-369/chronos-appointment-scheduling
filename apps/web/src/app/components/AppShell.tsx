@@ -14,6 +14,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { CommandPalette } from "./CommandPalette";
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -86,6 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="mb-8 flex items-center justify-between">
             <h1 className="text-2xl font-extrabold tracking-tight text-white">Dashboard</h1>
             <div className="flex gap-2">
+              <CommandPalette />
               <Link href="/bookings" className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition shadow-lg shadow-indigo-900/20">My Bookings</Link>
               <Link href="/settings" className="px-3 py-2 rounded-lg bg-[#111827] border border-white/10 hover:bg-[#1E293B] text-slate-200 text-sm font-medium transition">Settings</Link>
             </div>
