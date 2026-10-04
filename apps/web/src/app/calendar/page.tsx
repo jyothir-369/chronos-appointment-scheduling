@@ -105,7 +105,7 @@ export default function CalendarPage() {
             <h3 className="font-bold text-white mb-3">Select date</h3>
             <div className="text-xs text-slate-400 mb-3">{formatMonth(selectedDate)}</div>
             <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-500 mb-1">
-              {["S","M","T","W","T","F","S"].map((d) => <span key={d}>{d}</span>)}
+              {["S","M","T","W","T","F","S"].map((d, i) => <span key={i}>{d}</span>)}
             </div>
             <div className="grid grid-cols-7 gap-1">
               {Array.from({ length: firstDay }).map((_, i) => <span key={"e" + i} />)}

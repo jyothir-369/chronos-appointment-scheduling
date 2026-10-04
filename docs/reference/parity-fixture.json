@@ -1,0 +1,47 @@
+{
+  "user": "Sarah",
+  "workspace": "Acme Advisory Team",
+  "workspaceHandle": "chronos.app/dr-sarah",
+  "totalAppointments": 142,
+  "priorTotal": 124,
+  "estimatedValue": 4850,
+  "occupancy": 88,
+  "priorOccupancy": 83,
+  "appointments": [
+    {
+      "name": "Michael Vance",
+      "time": "10:00 AM",
+      "duration": "30m",
+      "location": "video",
+      "videoLink": "meet.google.com/abc-defg-hij",
+      "email": "michael@vance.io",
+      "eventType": "1-on-1 Strategy Call",
+      "status": "Confirmed"
+    },
+    {
+      "name": "Alex Chen",
+      "time": "02:00 PM",
+      "duration": "60m",
+      "location": "zoom",
+      "zoomLink": "zoom.us/j/987654321",
+      "email": "alex@chentech.com",
+      "eventType": "Technical Review",
+      "status": "Confirmed"
+    },
+    {
+      "name": "Sophia Martinez",
+      "time": "11:15 AM",
+      "duration": "15m",
+      "location": "phone",
+      "email": "sophia@martinez.org",
+      "eventType": "Free Intro Chat",
+      "status": "Pending"
+    }
+  ],
+  "badgeCount": 5,
+  "activityItems": [
+    "New booking by Michael Vance 12 mins ago",
+    "Updated Availability for Thursday 2 hours ago",
+    "Google Calendar sync completed 5 hours ago"
+  ]
+}

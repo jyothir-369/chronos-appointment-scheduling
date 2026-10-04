@@ -1,7 +1,7 @@
-/**
- * Health module — Phase 5 (§4.2)
- */
 import { Module } from '@nestjs/common';
+import { HealthController } from './health.controller.js';
 
-@Module({ controllers: [], providers: [], exports: [] })
+@Module({
+  controllers: [HealthController],
+})
 export class HealthModule {}

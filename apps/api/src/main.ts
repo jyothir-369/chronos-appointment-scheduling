@@ -11,7 +11,11 @@ async function bootstrap() {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['https://app.chronos.example'];
   if (process.env.NODE_ENV === 'development') allowedOrigins.push('http://localhost:3000');
   app.enableCors({ origin: allowedOrigins, credentials: true });
-  await app.listen(3001);
+  await app.listen(process.env.PORT || 3001);
   console.log('Chronos API listening on http://localhost:3001');
 }
+if (process.env.NODE_ENV === 'production' && process.env.NO_REAL_AUTH) {
+  throw new Error('NO_REAL_AUTH must not be set in production');
+}
+
 bootstrap();

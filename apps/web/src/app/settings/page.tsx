@@ -64,7 +64,6 @@ export default function SettingsPage() {
   const renderProfile = () => (
     <div className="space-y-6">
       <h2 className="text-xl font-extrabold tracking-tight text-white">Account Profile</h2>
-      <p className="text-sm text-slate-400">Update your provider profile settings. Data comes from <code className="text-indigo-300">/providers/me</code> via verified backend.</p>
       {loading ? <div className="h-32 rounded-2xl bg-[#0F172A] animate-pulse border border-white/5" /> : (
         <div className="space-y-4">
           <div>

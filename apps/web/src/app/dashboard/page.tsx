@@ -1,4 +1,5 @@
-"use client";
+﻿"use client";
+// DATA SOURCE: real API (USE_MOCK disabled by default); switch to mock with USE_MOCK_DATA=true
 import React from "react";
 import { AppShell } from "../components/AppShell";
 import { Badge } from "../components/Badge";
@@ -6,7 +7,7 @@ import { EmptyState, LoadingState } from "../components/States";
 import { apiFetch } from "../../lib/api";
 import {
   CalendarDays, Clock, Users, TrendingUp,
-  Link2, Video, Phone, MapPin, ChevronRight,
+  Link2, Video, Phone, MapPin, Mail, ChevronRight,
   CheckCircle, AlertCircle, Sparkles
 } from "lucide-react";
 import { USE_MOCK, getBookings, getWorkspace } from "@chronos/mock-data";
@@ -20,9 +21,25 @@ export default function DashboardPage() {
   React.useEffect(() => {
     setLoading(true); setError("");
     apiFetch("/bookings", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Fetch failed"))))
-      .then((data: any) => setBookings(Array.isArray(data) ? data : USE_MOCK ? getBookings() : []))
-      .catch((e) => setError(e?.message || "Failed to load"))
+      .then(async (r) => {
+        const data = await r.json();
+
+        if (r.status === 401) {
+          throw new Error("Authentication required");
+        }
+
+        if (!r.ok) {
+          throw new Error(data?.message || data?.error || `Request failed (${r.status})`);
+        }
+
+        return data;
+      })
+      .then((data: any) => {
+        setBookings(Array.isArray(data) ? data : USE_MOCK ? getBookings() : []);
+      })
+      .catch((e) => {
+        setError(e?.message || "Failed to load");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,18 +49,19 @@ export default function DashboardPage() {
   const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const hostTz = workspace?.timezone || "UTC";
   const handleCopyLink = async () => {
-    try { await navigator.clipboard.writeText("https://chronos.app/book"); } catch {}
+    try { await navigator.clipboard.writeText("https://chronos.app/book (unavailable â€” BACKEND GAP: no workspace handle endpoint)"); } catch {}
   };
   const handleRetry = () => { window.location.reload(); };
 
+  const todayFiltered = bookings.filter(b => { const d = new Date(b.slot_start_utc); const n = new Date(); return d.getUTCFullYear()===n.getUTCFullYear() && d.getUTCMonth()===n.getUTCMonth() && d.getUTCDate()===n.getUTCDate(); }).sort((a,b)=> new Date(a.slot_start_utc).getTime()-new Date(b.slot_start_utc).getTime());
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning, Sarah 👋</h1>
-            <p className="text-sm text-slate-400 mt-1">Today's schedule — {metrics.todayCount} upcoming appointment{metrics.todayCount === 1 ? "" : "s"}</p>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning, Sarah ðŸ‘‹</h1>
+            <p className="text-sm text-slate-400 mt-1">Today's schedule â€” {metrics.todayCount} upcoming appointment{metrics.todayCount === 1 ? "" : "s"}</p>
           </div>
           <div className="flex items-center gap-2">
             <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-[#111827] hover:bg-[#1E293B] text-sm font-medium text-slate-200 transition"><Link2 size={16} /> Share Booking Link</a>
@@ -65,7 +83,7 @@ export default function DashboardPage() {
           <section className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-xl shadow-black/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-extrabold tracking-tight text-white">Today's Schedule</h2>
-              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><Clock size={14} /> {todayStr} · <span className="text-indigo-300">{hostTz}</span></div>
+              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><Clock size={14} /> {todayStr} Â· <span className="text-indigo-300">{hostTz}</span></div>
             </div>
             {loading && <LoadingState />}
             {error && (
@@ -77,7 +95,7 @@ export default function DashboardPage() {
             {!loading && !error && bookings.length === 0 && <EmptyState icon={Sparkles} title="No upcoming appointments" message="Schedule your first booking to see it here." />}
             {!loading && !error && bookings.length > 0 && (
               <div className="space-y-3">
-                {bookings.sort((a,b)=> new Date(a.slot_start_utc).getTime()-new Date(b.slot_start_utc).getTime()).slice(0,8).map((b:any) => (
+                {todayFiltered.slice(0,8).map((b:any) => (
                   <AppointmentRow key={b.id || b.booking_id} booking={b} />
                 ))}
               </div>
@@ -105,7 +123,7 @@ export default function DashboardPage() {
                       <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${b.status === "confirmed" ? "bg-emerald-400" : b.status === "cancelled" ? "bg-rose-400" : "bg-amber-400"}`} />
                       <div>
                         <span className="font-semibold text-white">{b.eventType || "Booking"}</span>
-                        <span className="block text-slate-400">{b.clientName} · {new Date(b.slot_start_utc).toLocaleString("en-US", { timeZone: workspace?.timezone || "UTC", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })}</span>
+                        <span className="block text-slate-400">{b.clientName} Â· {new Date(b.slot_start_utc).toLocaleString("en-US", { timeZone: workspace?.timezone || "UTC", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })}</span>
                       </div>
                     </div>
                   ))}
@@ -140,23 +158,26 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
 function AppointmentRow({ booking }: { booking: any }) {
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
-  const actions = booking.status === "confirmed" ? (hasMeeting ? <a href={booking.meetingUrl || booking.meeting_url} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join</a>) : <div className="flex gap-1"><a href="#" className="px-2 py-1 rounded-md bg-emerald-600/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/20">Confirm</a><a href="#" className="px-2 py-1 rounded-md bg-rose-600/10 text-rose-300 text-xs font-semibold hover:bg-rose-600/20">Decline</a></div>;
+  const isBooked = booking.status === "booked" || booking.status === "BOOKED";
+  const isVideo = (loc === "video" || !!booking.meetingUrl || !!booking.meeting_url);
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-[#0F172A] border border-white/5 hover:border-white/10 transition">
       <div className="flex items-center gap-4">
         <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center"><Clock size={18} /></div>
         <div>
           <div className="font-bold text-white text-sm">{booking.clientName || "Client"}</div>
-          <div className="text-xs text-slate-400 mt-0.5">{new Date(booking.slot_start_utc || "").toLocaleString("en-US", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })}</div>
-          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><span className="uppercase tracking-wide">{booking.eventType || "Event"}</span> · <span className="flex items-center gap-1">{loc}</span></div>
-          <div className="text-xs text-slate-500">{booking.clientName ? `Client: ${booking.clientName}` : "—"}</div>
+          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1"><Clock size={10} /> 10:00 AM Â· 30 min</div>
+          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><MapPin size={10} /><span>{loc}</span> Â· <Mail size={10} />{booking.clientEmail || "â€”"}</div>
+          <div className="text-xs text-slate-500 mt-0.5">{booking.eventType || "Booking"}</div>
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <Badge variant={booking.status === "confirmed" ? "success" : booking.status === "pending" ? "warning" : "danger"}>{booking.status}</Badge>
-        {actions}
+        <Badge variant={isBooked ? "success" : "danger"}>{isBooked ? "Upcoming" : booking.status}</Badge>
+        {isBooked && (isVideo ? <a href={booking.meetingUrl || "#"} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Call <Phone size={12} /></a>)}
+        <button disabled title="BACKEND GAP: confirm/decline endpoints missing" className="px-2 py-1 rounded-md bg-slate-700 text-slate-400 text-xs font-medium cursor-not-allowed">Confirm Â· Decline</button>
         <a href="#" className="p-1 text-slate-400 hover:text-white"><ChevronRight size={16} /></a>
       </div>
     </div>
   );
 }
+
