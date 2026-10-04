@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 @Injectable()
 export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -18,6 +18,7 @@ export class AuthGuard implements CanActivate {
       req.user = { id: session, role: 'user' };
       return true;
     }
-    return false;
+    // Production: real login not implemented yet — 401 is acceptable (Phase 1B)
+    throw new UnauthorizedException('Authentication required — real login not implemented yet');
   }
 }

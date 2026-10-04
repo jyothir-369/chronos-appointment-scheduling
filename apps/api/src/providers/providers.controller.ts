@@ -1,20 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { Pool } from 'pg';
 
 @Controller('providers')
 export class ProvidersController {
-  private prisma = new PrismaClient();
+  private pool = new Pool({ connectionString: process.env.DATABASE_URL || 'postgresql://chronos:localdev@localhost:5433/chronos' });
+
+  @Get('me')
+  async getMe() {
+    const devId = process.env.DEV_PROVIDER_ID || 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    const res = await this.pool.query('SELECT * FROM providers WHERE id = $1', [devId]);
+    if (res.rowCount === 0) throw new NotFoundException('Provider not found');
+    return res.rows[0];
+  }
 
   @Get(':id')
   async getProvider(@Param('id') id: string) {
-    const p = await this.prisma.provider.findUnique({ where: { id } });
-    if (!p) throw new NotFoundException();
-    return p;
-  }
-
-  @Patch(':id')
-  async updateProvider(@Param('id') id: string, @Body() body: any) {
-    const p = await this.prisma.provider.update({ where: { id }, data: body });
-    return p;
+    const res = await this.pool.query('SELECT * FROM providers WHERE id = $1', [id]);
+    if (res.rowCount === 0) throw new NotFoundException();
+    return res.rows[0];
   }
 }
