@@ -11,7 +11,7 @@ async function bootstrap() {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['https://app.chronos.example'];
   if (process.env.NODE_ENV === 'development') allowedOrigins.push('http://localhost:3000');
   app.enableCors({ origin: allowedOrigins, credentials: true });
-  await app.listen(3001);
+  await app.listen(process.env.PORT || 3001);
   console.log('Chronos API listening on http://localhost:3001');
 }
 bootstrap();
