@@ -28,8 +28,7 @@ export default function EventTypesPage() {
         {error && (
           <div className="rounded-2xl border border-rose-900 bg-rose-950/40 p-6 text-rose-200 flex items-start gap-3"><AlertCircle size={20} />{error}</div>
         )}
-        {!loading && !error && items.length === 0 && (
-        )}
+        {!loading && !error && items.length === 0 && <EmptyState icon={Sparkles} title="No event types" message="Create event types in the backend to see them listed here." />}
         {!loading && !error && items.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map((et: any) => (

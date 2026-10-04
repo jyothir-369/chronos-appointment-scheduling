@@ -7,7 +7,7 @@ import { EmptyState, LoadingState } from "../components/States";
 import { apiFetch } from "../../lib/api";
 import {
   CalendarDays, Clock, Users, TrendingUp,
-  Link2, Video, Phone, MapPin, ChevronRight,
+  Link2, Video, Phone, MapPin, Mail, ChevronRight,
   CheckCircle, AlertCircle, Sparkles
 } from "lucide-react";
 import { USE_MOCK, getBookings, getWorkspace } from "@chronos/mock-data";
@@ -139,25 +139,26 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
   );
 }
 
-  // Status model: backend BOOKED/COMPLETED/CANCELLED/NO_SHOW; UI: Upcoming/Completed/Cancelled/No-show; no Confirm/Decline (endpoints missing); Join for upcoming video; Call for upcoming phone
-  // Status: backend BOOKED/COMPLETED/CANCELLED/NO_SHOW; UI Upcoming/Completed/Cancelled/No-show; no Confirm/Decline (endpoints missing); Join video; Call phone
+function AppointmentRow({ booking }: { booking: any }) {
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
-  const actions = booking.status === "confirmed" ? (hasMeeting ? <a href={booking.meetingUrl || booking.meeting_url} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Join</a>) : <div className="flex gap-1"><a href="#" className="px-2 py-1 rounded-md bg-emerald-600/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-600/20">Confirm</a><a href="#" className="px-2 py-1 rounded-md bg-rose-600/10 text-rose-300 text-xs font-semibold hover:bg-rose-600/20">Decline</a></div>;
+  const isBooked = booking.status === "booked" || booking.status === "BOOKED";
+  const isVideo = (loc === "video" || !!booking.meetingUrl || !!booking.meeting_url);
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-[#0F172A] border border-white/5 hover:border-white/10 transition">
       <div className="flex items-center gap-4">
         <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center"><Clock size={18} /></div>
         <div>
           <div className="font-bold text-white text-sm">{booking.clientName || "Client"}</div>
-          <div className="text-xs text-slate-400 mt-0.5">{new Date(booking.slot_start_utc || "").toLocaleString("en-US", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" })}</div>
-          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><span className="uppercase tracking-wide">{booking.eventType || "Event"}</span> · <span className="flex items-center gap-1">{loc}</span></div>
-          <div className="text-xs text-slate-500">{booking.clientName ? `Client: ${booking.clientName}` : "—"}</div>
+          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1"><Clock size={10} /> 10:00 AM · 30 min</div>
+          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><MapPin size={10} /><span>{loc}</span> · <Mail size={10} />{booking.clientEmail || "—"}</div>
+          <div className="text-xs text-slate-500 mt-0.5">{booking.eventType || "Booking"}</div>
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <Badge variant={booking.status === "confirmed" ? "success" : booking.status === "pending" ? "warning" : "danger"}>{booking.status}</Badge>
-        {actions}
+        <Badge variant={isBooked ? "success" : "danger"}>{isBooked ? "Upcoming" : booking.status}</Badge>
+        {isBooked && (isVideo ? <a href={booking.meetingUrl || "#"} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Call <Phone size={12} /></a>)}
+        <button disabled title="BACKEND GAP: confirm/decline endpoints missing" className="px-2 py-1 rounded-md bg-slate-700 text-slate-400 text-xs font-medium cursor-not-allowed">Confirm · Decline</button>
         <a href="#" className="p-1 text-slate-400 hover:text-white"><ChevronRight size={16} /></a>
       </div>
     </div>

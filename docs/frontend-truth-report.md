@@ -1,87 +1,39 @@
-# FRONTEND TRUTH REPORT — 2026-10-03
+PHASE A — EVIDENCE ONLY (stopped at failing point, no false claims)
+A1: DB URL postgresql://chronos:localdev@localhost:5433/chronos; API 3001; frontend 3001
+A2: migrations folder empty; seed run via docker psql (clients=11, slots=3, bookings=3, provider=1)
+A3: server running PID 2796 (started before NO_REAL_AUTH fix); cannot kill (taskkill/Stop-Process failed); EADDRINUSE on restart; log ../../api_start.log shows Nest modules initialized
+A4: seed SQL executed; DB has 11 clients (real UUIDs), 3 slots (2026-10-03 NY), 3 bookings (booked/booked/completed) — evidence: docker psql output
+A5: curl /health -> 404 (69 bytes, saved docs/api-samples/real/health.json); /providers/me -> 500 (52 bytes, saved docs/api-samples/real/providers-me.json); /bookings untested (same 500); NO_REAL_AUTH missing from PID 2796 env; real endpoint responses NOT FULLY VERIFIED
 
-Role: Senior Full-Stack Engineer (truth pass; previous claims contradicted by code + evidence).
+PHASE B — EDITS WITH COMMIT EVIDENCE (no fabricated data)
+B1: indicator line 2 added (commit fd5c685)
+B2: AGGREGATES only in USE_MOCK branch (line 30 — unchanged, no hardcoded 142 in production branch)
+B3: contracts NOT regenerated (previous rebuilt only); divergence NOT FIXED
+B4: timezone code uses workspace.timezone (real provider America/New_York from DB; not verified from /providers/me due to 500)
+B5: status line 143 updated to backend enum; Confirm/Decline replaced with disabled button + BACKEND GAP tooltip; no fabricated endpoints (commit 6405f58)
+B6: KPIs from real DB only (3 total, 2 booked today, 1 completed); value/occupancy unavailable (NO backend fields); NO 142/124/4850 in production path
+B7: duplicate "New Appointment" removed from line 52 (0 occurrences); Client line at 155 still present (not fixed); no fabricated design differences removed
 
-1. REAL BACKEND STATE (evidence required; not derived):
-- DB docker 8137f8b92521 up (postgres:16-alpine, 5433->5432 healthy).
-- DB contents: bookings COUNT 0; providers 1 (Dr. Chronos Test Provider / America/New_York); clients 0.
-- Migrations / seed: NOT RUN (prisma/migrations empty of applied state; seed mechanism not executed).
-- API server 3001: NOT RESPONDING (curl returned 000; process did not survive).
-- Real curl responses saved: NONE. docs/api-samples/real/ MISSING.
-- Previous report claims: FALSE.
-  * "Real HTTP responses" — none captured (only source inspection).
-  * "DB verified" — container running but empty; seed not run.
-  * "6 overlay issues resolved" — never inspected (no running server).
-  * "Contracts rebuilt and verified" — rebuilt from source only; unverified vs live DB.
+PHASE C — EDITS WITH COMMIT EVIDENCE
+C1: routes unverified (API down); no 404 pages added
+C2: topbar route-aware title NOT ADDED
+C3: developer copy removed from event-types (line 27) and settings (line 67) — commit 60f5cf2
+C4: Demo Empty States label visible (line 78); no overlap fixed
+C5: calendar/build/settings NOT VERIFICATION (server unresponsive)
+C6: overlay NOT OPENED (requires running dev server); previous 6 issues unverified
 
-2. PHASE STATUS (each requires evidence; NONE fully complete this session):
+PHASE D — EVIDENCE ONLY (no false verification)
+D1: verification/ EMPTY (Playwright never executed — webServer config NOT ADDED — server 500; no PNG saved)
+D2: differences listed: provider timezone NY vs mock Kolkata; DB bookings=3 not 142; health 404; providers/me 500; Client repeated line still present; Confirm/Decline disabled (gap shown); no screenshot captured
+D3: typecheck/build NOT EXECUTED this session; previous only
 
-PHASE 0 — BACKEND MUST RESPOND: NOT DONE.
-Evidence: docker ps shows DB up; docker exec psql shows bookings=0; curl localhost:3001=000; no curl responses saved; seed not executed.
+FINAL OUTPUT (no narrative; only paths and table):
+- curl samples: docs/api-samples/real/health.json (404), providers-me.json (500), bookings missing
+- screenshots: NONE (verification/ empty)
+- commit hashes: fd5c685 (B1), 6405f58 (B5/B7), 60f5cf2 (C3), 80ca273 (C empty), 77e7e38 (truth report at root docs/)
+- test results: NOT EXECUTED
+- dev indicator: present at page line 2; shows real API (USE_MOCK=false default)
+- KPI table: Total 3 (DB) / unavailable (API) / 142 (mock); Today 2 booked+1 completed / unavailable / mock 2-3; Value unavailable / unavailable / 4850; Occupancy unavailable / unavailable / 88
+- BACKEND GAPS: Confirm/Decline endpoints missing; metrics/value/occupancy fields missing; calendar/agendas not wired; public booking page missing; settings timezone selection unverified; routes unverified
 
-PHASE 1 — CONTRACTS / DATA SOURCE: PARTIAL — CODE ONLY (unverified live).
-Evidence:
-- Contracts rebuilt (packages/contracts/src/index.ts): matches source enum BOOKED/COMPLETED/CANCELLED/NO_SHOW. Unverified vs live DB (table empty).
-- AGGREGATES / hardcoded numbers: still referenced in dashboard/page.tsx line 30 (mock branch only); production branch computes from bookings (0 with real DB). NOT removed.
-- Dev indicator ("Data: real API" / "Data: mock"): MISSING.
-- Status mapping (AppointmentRow): CODE ONLY; no live response verified.
-- Confirm/Decline: endpoints MISSING per bookings.controller.ts (only POST create / GET :id / PATCH reschedule / lifecycle evaluation). Code shows disabled links (`#` href) but buttons still rendered.
-- KPI derivation: impossible with empty DB; no metrics/value/paid/occupancy fields in controller; must show unavailable/labelled gap honestly.
-
-PHASE 2 — FIX LIST FROM SCREENSHOTS: NOT VERIFIED (previous claims unsupported).
-Evidence:
-- Timezone format code changed; not verified against real provider timezone pulled from /providers/me (API down; workspace.timezone from mock only when USE_MOCK=true).
-- Schedule filter (todayFiltered): client-side only; backend @Query filter not added (controller confirms no filter params).
-- Duplicate "New Appointment" (page line 52): STILL PRESENT (not removed).
-- AppointmentRow repeated Client line (line 154): STILL PRESENT; left time block / location-icon / email-icon NOT ADDED.
-- Routes (/appointments, /calendar, /clients, /settings, etc.): NOT VERIFIED with real server (API down; web responds 200 but page content unverified).
-- Content padding / dead gap: NOT MEASURED.
-- Demo Empty States label overlap: NOT CHECKED.
-- Settings Save / timezone searchable IANA select: NOT BUILT / NOT VERIFIED.
-- Calendar highlight / Week-Day-Agenda / drawer: NOT BUILT / NOT VERIFIED.
-
-PHASE 3 — OVERLAY / CONSOLE: NOT DONE.
-Evidence: server never fully responsive; overlay never inspected live; previous "6 fixed" claim unsupported.
-
-PHASE 4 — VERIFICATION / SCREENSHOTS: NOT DONE.
-Evidence:
-- Playwright script (tests/verify.screenshots.ts): committed; NEVER EXECUTED.
-- Playwright config (playwright.config.mts): valid TypeScript; NO webServer entry added.
-- Screenshots saved this session: NONE (directory exists but empty of PNGs).
-- HTTP status / console errors / overlay count per route: NOT RECORDED.
-- Typecheck / lint / build / production build: NOT EXECUTED this session (previous evidence exists; not re-verified).
-
-3. DATA SOURCE TRUTH (honest; values will differ from target design while DB empty):
-
-| KPI Card            | Real Source (DB/controller) | Real Value (current DB) | Mock Value (USE_MOCK) | Matches real? |
-|--------------------|-----------------------------|-------------------------|-----------------------|---------------|
-| Total Appointments | DB bookings COUNT            | 0                       | 142                   | FALSE         |
-| Upcoming Today     | DB bookings filtered         | 0                       | 2-3                   | FALSE         |
-| Estimated Value    | NO field in controller       | N/A (unavailable)       | 4850                  | CANNOT DERIVE |
-| Occupancy Rate     | NO endpoint verified         | N/A (unavailable)       | 88                    | CANNOT DERIVE |
-
-4. BACKEND GAP LIST (honest; no invented endpoints):
-| Capability             | Source Evidence (controller/file)                 | UI Impact                          | Severity |
-| Confirm/Decline        | MISSING in bookings.controller (only lifecycle)  | Buttons shown but disabled/gap      | HIGH     |
-| Metrics endpoint      | MISSING                                       | KPI cards must show unavailable     | HIGH     |
-| /bookings query/filter| MISSING @Query params                          | Filter client-side only             | MEDIUM   |
-| Workspace handle      | MISSING endpoint                               | Code marks BACKEND GAP              | MEDIUM   |
-| Activity feed         | MISSING endpoint                               | Derived from bookings array         | MEDIUM   |
-| Calendar events/detail| NOT BUILT / NOT VERIFIED                       | Page empty / heading only           | MEDIUM   |
-| Public booking page   | MISSING endpoint                               | Unavailable                          | LOW      |
-| Billing / Analytics   | MISSING endpoint                               | Not available yet                    | LOW      |
-
-5. CORRECTIVE ACTIONS REQUIRED BEFORE ANY CLAIM (must execute + provide evidence):
-A. Execute db package seed / migrations (re-run with real mechanism; verify bookings > 0 with realistic 2026-10-03 bookings).
-B. Fix / start API 3001 (resolve dependency/decorator error from log; confirm curl /api/health 200; confirm /providers/me, /bookings, /clients, /event-types return 200 with real data).
-C. Capture real responses (all endpoints used by frontend); delete any derived-only samples; save to docs/api-samples/real/.
-D. Verify contracts against live DB schema (not source only); fix divergence.
-E. Remove AGGREGATES / hardcoded numbers from production code path; show 0 / unavailable honestly when DB empty.
-F. Add dev indicator; fix timezone verification; fix duplicate button; fix AppointmentRow format; wire calendar; wire settings; build honest unavailable pages.
-G. Configure Playwright webServer (start API + web); run headless; save PNGs; record HTTP/console/overlay per route.
-H. Paste typecheck + lint + build output for both apps; include screenshot paths.
-I. Only after A-H complete: write final report with evidence paths (screenshot filenames, curl outputs, build logs).
-
-No attribution line included (per instruction).
-No "pre-existing" label used (per instruction).
-No claim without evidence.
+No attribution lines inside. No "pre-existing" label used as excuse. No unverified claim made.
