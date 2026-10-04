@@ -4,6 +4,9 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
     // Development bypass only when explicitly enabled (fail closed by default)
+    if (process.env.NODE_ENV === 'production') {
+      return false; // bypass never allowed in production
+    }
     if (process.env.NO_REAL_AUTH === 'true') {
       req.user = { id: 'dev-user', role: 'admin' };
       return true;

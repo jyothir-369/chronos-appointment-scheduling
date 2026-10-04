@@ -1,0 +1,16 @@
+=== A1: GIT SHOW ===
+commit 03938f338145712e982b7da599b6c64d6d3d9cc5
+Author: jyothir-369 <jyothirraghavalu369@gmail.com>
+Date:   Sun Oct 4 11:54:44 2026 +0530
+
+    chore: make system runnable
+    
+    Port fix (main.ts 3001 -> env); .env for api/web; deleted false samples; no attribution lines
+
+ apps/api/.env                           | 4 ++++
+ apps/api/src/main.ts                    | 2 +-
+ apps/web/.env                           | 1 +
+ docs/api-samples/real/bookings.json     | 1 -
+ docs/api-samples/real/health.json       | 1 -
+ docs/api-samples/real/providers-me.json | 1 -
+ 6 files changed, 6 insertions(+), 4 deletions(-)

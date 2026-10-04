@@ -1,0 +1,13 @@
+src/availability/availability.controller.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/availability/availability.controller.ts(14,48): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/availability/availability.service.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/clients/clients.controller.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/event-types/event-types.controller.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/lifecycle/lifecycle.service.ts(3,3): error TS2305: Module '"@prisma/client"' has no exported member 'BookingStatus'.
+src/lifecycle/lifecycle.service.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/lifecycle/lifecycle.service.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'SlotStatus'.
+src/lifecycle/lifecycle.service.ts(17,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/lifecycle/lifecycle.service.ts(81,44): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+src/materialize/materializer.service.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/providers/providers.controller.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+src/slots/slots.controller.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.

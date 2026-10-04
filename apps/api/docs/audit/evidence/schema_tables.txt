@@ -1,0 +1,15 @@
+               List of relations
+ Schema |        Name        | Type  |  Owner  
+--------+--------------------+-------+---------
+ public | availability_rules | table | chronos
+ public | blocked_periods    | table | chronos
+ public | bookings           | table | chronos
+ public | clients            | table | chronos
+ public | idempotency_keys   | table | chronos
+ public | providers          | table | chronos
+ public | reminder_jobs      | table | chronos
+ public | services           | table | chronos
+ public | slots              | table | chronos
+ public | waitlist_entries   | table | chronos
+(10 rows)
+

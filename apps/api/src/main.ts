@@ -14,4 +14,8 @@ async function bootstrap() {
   await app.listen(process.env.PORT || 3001);
   console.log('Chronos API listening on http://localhost:3001');
 }
+if (process.env.NODE_ENV === 'production' && process.env.NO_REAL_AUTH) {
+  throw new Error('NO_REAL_AUTH must not be set in production');
+}
+
 bootstrap();
