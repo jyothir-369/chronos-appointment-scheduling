@@ -77,7 +77,7 @@ export default function DashboardPage() {
   };
 
   const handleCopyLink = async () => {
-    try { await navigator.clipboard.writeText("https://chronos.app/book (unavailable â€” BACKEND GAP: no workspace handle endpoint)"); } catch {}
+    try { await navigator.clipboard.writeText(`https://chronos.app/book/${workspace?.handle || 'book'}`); } catch {}
   };
   const handleRetry = () => { window.location.reload(); };
 
@@ -203,7 +203,8 @@ function AppointmentRow({ booking }: { booking: any }) {
       <div className="flex items-center gap-3 shrink-0">
         <Badge variant={isBooked ? "success" : "danger"}>{isBooked ? "Upcoming" : booking.status}</Badge>
         {isBooked && (isVideo ? <a href={booking.meetingUrl || "#"} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Join <Video size={12} /></a> : <a href="#" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-indigo-600 text-white text-xs font-semibold">Call <Phone size={12} /></a>)}
-        <button disabled title="BACKEND GAP: confirm/decline endpoints missing" className="px-2 py-1 rounded-md bg-slate-700 text-slate-400 text-xs font-medium cursor-not-allowed">Confirm Â· Decline</button>
+        <button onClick={() => { const id = booking.id || booking.booking_id; if (id) fetch(`http://localhost:3001/bookings/${id}/confirm`, {method:'POST', credentials:'include'}).then(r=>r.ok?window.location.reload():null); }} className="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition">Confirm</button>
+        <button onClick={() => { const id = booking.id || booking.booking_id; if (id) fetch(`http://localhost:3001/bookings/${id}/decline`, {method:'POST', credentials:'include'}).then(r=>r.ok?window.location.reload():null); }} className="px-2 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-xs font-medium transition">Decline</button>
         <a href="#" className="p-1 text-slate-400 hover:text-white"><ChevronRight size={16} /></a>
       </div>
     </div>

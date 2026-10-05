@@ -20,7 +20,8 @@ export default function SettingsPage() {
   const [smsNotify, setSmsNotify] = React.useState(false);
   const [dailySummary, setDailySummary] = React.useState(true);
 
-  const [profile, setProfile] = React.useState({name:'Dr. Sarah Jenkins', email:'sarah@chronos.app', slug:'dr-sarah'});
+  const [profile, setProfile] = React.useState({name:'Dr. Sarah Jenkins', email:'sarah@chronos.app', slug:'dr-sarah', avatarUrl:null as string|null});
+  const [uploading, setUploading] = React.useState(false);
   const handleSave = async () => {
     try {
       const res = await fetch('http://localhost:3001/providers/me', { method: 'PATCH', headers: {'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({name: profile.name, slug: profile.slug}) });
@@ -50,10 +51,10 @@ export default function SettingsPage() {
         {active === "profile" && (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm max-w-4xl">
             <div className="flex items-center gap-4">
-              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Dr. Sarah Jenkins" className="w-16 h-16 rounded-full object-cover ring-2 ring-brand-500" />
+              <img src={profile.avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80"} alt={profile.name} className="w-16 h-16 rounded-full object-cover ring-2 ring-brand-500" />
               <div>
                 <div className="flex items-center gap-3">
-                  <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition inline-block"><input type="file" accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(e:any) => { const f=e.target.files[0]; if(!f){return} if(f.size>1024*1024){alert("File exceeds 1MB"); return} if(!/.(jpe?g|png|gif)$/i.test(f.name)){alert("Only JPG, PNG, GIF allowed"); return} alert("Image valid: "+f.name+" (POST /providers/me/avatar endpoint required to persist — database updates provider avatar_url)"); }} />Change Photo</label>
+                  <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition inline-block"><input type="file" accept="image/jpeg,image/png,image/gif" className="hidden" disabled={uploading} onChange={async (e:any) => { const f=e.target.files?.[0]; if(!f){return} if(f.size>1024*1024){alert("File exceeds 1MB"); return} if(!/.(jpe?g|png|gif)$/i.test(f.name)){alert("Only JPG, PNG, GIF allowed"); return} setUploading(true); const formData = new FormData(); formData.append('file', f); formData.append('fileName', f.name); try { const res = await fetch('http://localhost:3001/providers/me/avatar', { method:'POST', credentials:'include', body: formData }); const data = await res.json().catch(()=>({})); if(res.ok && data.avatar_url){ setProfile(p=>({...p, avatarUrl: data.avatar_url})); window.dispatchEvent(new CustomEvent('refresh-profile')); } else { alert('Upload failed: '+(data.error||'Unknown')) } } catch(err:any){ alert('Upload error: '+err.message); } setUploading(false); }} />{uploading ? 'Uploading...' : 'Change Photo'}</label>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">JPG, GIF or PNG. 1MB max.</p>
               </div>
