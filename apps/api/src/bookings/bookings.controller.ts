@@ -79,7 +79,30 @@ export class BookingsController {
     }));
   }
 
-  @Post(':id/reschedule')
+  
+  @Patch(':id/status')
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @Headers('cookie') cookie?: string) {
+    const sessionClientId = extractClientFromCookie(cookie);
+    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const res = await client.query('SELECT status, version, client_id FROM bookings WHERE id = $1 FOR UPDATE', [id]);
+      if (res.rowCount === 0) { await client.query('ROLLBACK'); return { status: 404, error: 'not_found' }; }
+      const b = res.rows[0];
+      if (b.client_id !== sessionClientId) { await client.query('ROLLBACK'); return { status: 403, error: 'unauthorized' }; }
+      const allowed = ['confirmed','declined','completed','cancelled','booked'];
+      if (!allowed.includes(body.status)) { await client.query('ROLLBACK'); return { status: 422, error: 'invalid_status' }; }
+      await client.query('UPDATE bookings SET status = $1, version = version + 1 WHERE id = $2', [body.status, id]);
+      await client.query('COMMIT');
+      return { status: 200, booking: { id, status: body.status, version: b.version + 1 } };
+    } catch (e: any) {
+      await client.query('ROLLBACK').catch(()=>{});
+      throw e;
+    } finally { client.release(); }
+  }
+
+@Post(':id/reschedule')
   async rescheduleBooking(
     @Param('id') id: string,
     @Body() body: { newSlotId: string; idempotencyKey?: string; version: number; ifMatch: number; cancellationWindowHours?: number },
