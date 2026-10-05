@@ -18,6 +18,10 @@ export class NotificationsService {
   async markAllReadForProvider(providerId: string) {
     return prisma.notification.updateMany({ where: { providerId, read: false }, data: { read: true } });
   }
+  async markRead(id: string, clientId: string) {
+    const res = await prisma.notification.updateMany({ where: { id, clientId }, data: { read: true } });
+    return res;
+  }
   async markAllReadForClient(clientId: string) {
     return prisma.notification.updateMany({ where: { clientId, read: false }, data: { read: true } });
   }
