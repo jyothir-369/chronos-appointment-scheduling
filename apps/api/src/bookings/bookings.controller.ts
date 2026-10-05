@@ -14,6 +14,11 @@ function extractClientFromCookie(cookie?: string): string | null {
   return match ? match[1] : null;
 }
 
+async function getProviderIdFromSlot(pool: Pool, slotId: string): Promise<string | null> {
+  const res = await pool.query('SELECT provider_id FROM slots WHERE id = $1', [slotId]);
+  return res.rowCount ? res.rows[0].provider_id : null;
+}
+
 @Controller('bookings')
 export class BookingsController {
   @Post()
@@ -33,6 +38,13 @@ export class BookingsController {
       clientTimezone: 'UTC',
     };
     const result = await createBooking(pool, req, clock.now().toString());
+    // Create notification for provider when booking created
+    try {
+      const providerId = await getProviderIdFromSlot(pool, req.slotId);
+      if (providerId) {
+        await pool.query("INSERT INTO notifications (id, type, provider_id, client_id, booking_id, title, message, read) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, false)", ['new_booking', providerId, req.clientId || 'anonymous', result.bookingId || null, 'New Appointment', 'A new booking was created.']);
+      }
+    } catch { /* notification creation best-effort */ }
     if (result.status === 201) return { status: 201, bookingId: result.bookingId, replay: result.replay };
     if (result.status === 409) throw new ConflictException(result.error || 'Slot unavailable');
     if (result.status === 422) throw new ConflictException(result.error || 'Idempotency conflict');
