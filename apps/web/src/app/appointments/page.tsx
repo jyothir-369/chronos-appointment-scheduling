@@ -236,7 +236,7 @@ export default function AppointmentsPage() {
                       <button onClick={() => handleAction("confirm", drawerItem)} className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">Confirm</button>
                       <button onClick={() => handleAction("decline", drawerItem)} className="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">Decline</button>
                       <button onClick={() => handleAction("cancel", drawerItem)} className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition">Cancel</button>
-                      <button onClick={() => handleAction("reschedule", drawerItem, { newSlotId: "" })} className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition">Reschedule</button>
+                      <button onClick={() => alert("Reschedule requires slot selection — select available slot then submit (backend PATCH /appointments/:id/reschedule with newSlotId). Currently placeholder.")} className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition">Reschedule</button>
                     </>
                   ) : drawerItem?.status === "pending" ? (
                     <>

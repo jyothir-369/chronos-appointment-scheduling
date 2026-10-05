@@ -53,7 +53,7 @@ export default function SettingsPage() {
               <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Dr. Sarah Jenkins" className="w-16 h-16 rounded-full object-cover ring-2 ring-brand-500" />
               <div>
                 <div className="flex items-center gap-3">
-                  <button className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition">Change Photo</button>
+                  <label className="cursor-pointer px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition inline-block"><input type="file" accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(e:any) => { const f=e.target.files[0]; if(!f){return} if(f.size>1024*1024){alert("File exceeds 1MB"); return} if(!/.(jpe?g|png|gif)$/i.test(f.name)){alert("Only JPG, PNG, GIF allowed"); return} alert("Profile image selected: "+f.name+" (upload to backend/storage endpoint)"); }} />Change Photo</label>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">JPG, GIF or PNG. 1MB max.</p>
               </div>
