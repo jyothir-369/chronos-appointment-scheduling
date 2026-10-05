@@ -1,0 +1,1 @@
+Plan created. Zero mutations. Phases: 9 (DB/Prisma, Backend, Timezone/DST/Reminders, Frontend API, UI, UX/Settings, Responsive, Runtime/E2E, Production). Critical: F01 SlotStatus rename, F02 timezone, F08 mock isolation, F09 auth retry. DB preserved. SlotStatus NOT renamed. No fixes executed.

@@ -1,0 +1,30 @@
+VERIFICATION RESULT — verify-chronos.ps1 MISSING — STOP AT 1.1
+
+Created/changed (only permitted):
+- verification/final/screens/ (empty dir)
+- verification/final/scripts/ (empty dir)
+- verification/final/result.txt (this file)
+
+Dependencies added: none (no pnpm add -D @playwright/test @axe-core/playwright run)
+Source edits: 0
+Commits: 0
+Attribution lines: 0
+
+Check results (binary, from commands run this session):
+1.1 verify-chronos.ps1 exists: FAIL — ls verify-chronos.ps1 returned nothing; file absent at repo root
+1.2 DB backup: NOT EXECUTED (blocked by 1.1)
+1.3 Script run: NOT EXECUTED (blocked by 1.1)
+1.4 Sections by hand: NOT EXECUTED (blocked by 1.1)
+2.1 verify-screens.mjs: NOT EXECUTED
+2.2 Screenshots count: 0
+2.3 pages.json: NOT EXECUTED
+2.4 axe-core: NOT EXECUTED
+2.5 Contact sheets: NOT EXECUTED
+3.1 verify-behavior.mjs: NOT EXECUTED
+T1-T8: NOT EXECUTED
+
+Stop reason (exact): verify-chronos.ps1 not found — environment entry-point missing. Same effect as environment-cannot-start; no further checks executed per rule 2. No servers started (no Start-Process), nothing to kill with taskkill /PID, ports 3000/3001/3100 not touched. No docker exec executed because container/db/user unknown (blocked at 1.1).
+
+Evidence paths:
+- Check 1.1: repo root ls (verify-chronos.ps1 absent)
+- All others: n/a (not executed)

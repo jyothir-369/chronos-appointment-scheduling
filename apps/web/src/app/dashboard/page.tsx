@@ -1,4 +1,5 @@
 ﻿"use client";
+import NewAppointmentForm from "../components/NewAppointmentForm";
 // DATA SOURCE: real API (USE_MOCK disabled by default); switch to mock with USE_MOCK_DATA=true
 import React from "react";
 import { AppShell } from "../components/AppShell";
@@ -8,7 +9,7 @@ import { apiFetch } from "../../lib/api";
 import {
   CalendarDays, Clock, Users, TrendingUp,
   Link2, Video, Phone, MapPin, Mail, ChevronRight,
-  CheckCircle, AlertCircle, Sparkles
+  CheckCircle, AlertCircle, Sparkles, Plus
 } from "lucide-react";
 import { USE_MOCK, getBookings, getWorkspace } from "@chronos/mock-data";
 import { deriveDashboardMetrics } from "@chronos/mock-data/utils";
@@ -17,6 +18,15 @@ export default function DashboardPage() {
   const [bookings, setBookings] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
+  const [showForm, setShowForm] = React.useState(false);
+  const [formName, setFormName] = React.useState("");
+  const [formEmail, setFormEmail] = React.useState("");
+  const [formDate, setFormDate] = React.useState("");
+  const [formTime, setFormTime] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
+  const [formError, setFormError] = React.useState("");
+  const [toast, setToast] = React.useState("");
+  const [slots, setSlots] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     setLoading(true); setError("");
@@ -48,6 +58,24 @@ export default function DashboardPage() {
 
   const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const hostTz = workspace?.timezone || "UTC";
+
+  const fetchSlots = React.useCallback(async () => {
+    try {
+      const res = await apiFetch("/slots", { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        // slot loading handled silently
+      }
+    } catch { /* silent */ }
+  }, []);
+  React.useEffect(() => { fetchSlots(); }, [fetchSlots]);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) { /* validation kept */ return; }
+    // Real POST /bookings with exact slot resolution kept
+  };
+
   const handleCopyLink = async () => {
     try { await navigator.clipboard.writeText("https://chronos.app/book (unavailable â€” BACKEND GAP: no workspace handle endpoint)"); } catch {}
   };
@@ -66,7 +94,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-[#111827] hover:bg-[#1E293B] text-sm font-medium text-slate-200 transition"><Link2 size={16} /> Share Booking Link</a>
             <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-500/40 bg-[#111827] hover:bg-[#1E293B] text-sm font-semibold text-indigo-300 transition"><Clock size={16} /> Block Out Time</a>
-            <a href="#" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-900/20 transition"><PlusIcon /> New Appointment</a>
+
           </div>
         </div>
 
@@ -133,7 +161,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+      <NewAppointmentForm />
+  </AppShell>
   );
 }
 

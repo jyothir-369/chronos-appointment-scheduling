@@ -6,8 +6,8 @@ import { Badge } from "../components/Badge";
 import { EmptyState } from "../components/States";
 import { CalendarDays, Clock, User, AlertCircle } from "lucide-react";
 
-function formatUtcShort(iso: string) {
-  try { const d = new Date(iso); return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" }); } catch { return iso; }
+function formatClientShort(iso: string) {
+  try { const d = new Date(iso + "Z"); return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC") || "UTC" }); } catch { return iso; }
 }
 
 function statusVariant(s: string) {
@@ -79,7 +79,7 @@ export default function BookingsPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-slate-400">
-                    <span className="flex items-center gap-1.5"><Clock size={14} /> {formatUtcShort(b.slot_start_utc || b.slot?.slot_start_utc)}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={14} /> {formatClientShort(b.slot_start_utc || b.slot?.slot_start_utc)}</span>
                     <span className="flex items-center gap-1.5"><User size={14} /> {b.client_id ? String(b.client_id).slice(0,8) : "—"}</span>
                   </div>
                   <div className="mt-3 text-xs text-slate-500">UTC • Status version {b.version ?? 1}</div>

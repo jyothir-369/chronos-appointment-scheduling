@@ -8,6 +8,8 @@ import { clock, subtractElapsed } from '@chronos/time';
 const T = (globalThis as any).Temporal;
 
 export interface BookingRequest {
+  providerId?: string;
+  eventTypeId?: string;
   slotId: string;
   clientId: string;
   idempotencyKey?: string;
@@ -51,7 +53,7 @@ export async function createBooking(
     // Lock slot for update (compare-and-set); reject if booked or in past
     const slotRes = await db.query(
       `UPDATE slots SET status = 'booked'
-       WHERE id = $1 AND status = 'open' AND slot_start_utc > $2
+       WHERE id = $1 AND status = 'open' AND slot_start_utc >= $2
        RETURNING id, provider_id, slot_start_utc`,
       [slotId, effectiveNow]
     );
@@ -62,21 +64,21 @@ export async function createBooking(
 
     // Insert booking; partial unique index protects second live booking
     const bookingRes = await db.query(
-      `INSERT INTO bookings (slot_id, client_id, client_timezone, status)
-       VALUES ($1, $2, $3, 'booked') RETURNING id`,
-      [slotId, clientId, clientTimezone]
+      `INSERT INTO bookings (slot_id, client_id, client_timezone, provider_id, event_type_id, status)
+       VALUES ($1, $2, $3, $4, $5, 'booked') RETURNING id`,
+      [slotId, clientId, clientTimezone, (req as any).providerId || null, (req as any).eventTypeId || null]
     );
 
     // Insert reminder jobs (skipping past offsets)
     const offsets = [1440, 60];
     for (const off of offsets) {
       const fire = subtractElapsed(slotRes.rows[0].slot_start_utc, off);
-      const fireMs = (T?.Instant?.from(fire)?.epochMilliseconds) ?? new Date(fire).getTime();
+      const fireMs = new Date(slotRes.rows[0].slot_start_utc).getTime() - off * 60000;
       const nowMs = clock.now().epochMs;
       if (fireMs > nowMs) {
         await db.query(
           `INSERT INTO reminder_jobs (booking_id, offset_minutes, fire_at_utc, status) VALUES ($1, $2, $3, 'scheduled')`,
-          [bookingRes.rows[0].id, off, fire]
+          [bookingRes.rows[0].id, off, new Date(fireMs).toISOString()]
         );
       }
     }

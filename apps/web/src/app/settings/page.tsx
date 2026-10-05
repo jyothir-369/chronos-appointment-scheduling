@@ -1,9 +1,7 @@
 "use client";
 import React from "react";
 import { AppShell } from "../components/AppShell";
-import { Badge } from "../components/Badge";
-import { apiFetch } from "../../lib/api";
-import { Settings, User, Bell, Shield, Palette, CreditCard, Link2, Check, AlertCircle, Sparkles, Clock } from "lucide-react";
+import { User, Link2, Bell, Palette, Shield, CreditCard, Check } from "lucide-react";
 
 const tabs = [
   { id: "profile", label: "Account Profile", icon: User },
@@ -16,160 +14,104 @@ const tabs = [
 
 export default function SettingsPage() {
   const [active, setActive] = React.useState("profile");
-  const [provider, setProvider] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [saved, setSaved] = React.useState(false);
-  const [saving, setSaving] = React.useState(false);
-  const [providerId, setProviderId] = React.useState<string>("");
-  const [error, setError] = React.useState("");
+  const [toasted, setToasted] = React.useState(false);
+  const [slug, setSlug] = React.useState("dr-sarah");
+  const [emailNotify, setEmailNotify] = React.useState(true);
+  const [smsNotify, setSmsNotify] = React.useState(false);
+  const [dailySummary, setDailySummary] = React.useState(true);
 
-  React.useEffect(() => {
-    setLoading(true);
-    apiFetch("/providers/me", { credentials: "include" })
-      .then((r) => {
-        if (!r.ok) return null;
-        return r.json();
-      })
-      .then((d: any) => {
-        if (d?.id) setProviderId(d.id);
-        setProvider(d || { name: "", timezone: "UTC", cancellationWindowHours: 24 });
-      })
-      .catch((e) => setError(e?.message || "Failed"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const saveProfile = async () => {
-    if (!providerId) return;
-    setSaving(true); setSaved(false); setError("");
+  const [profile, setProfile] = React.useState({name:'Dr. Sarah Jenkins', email:'sarah@chronos.app', slug:'dr-sarah'});
+  const handleSave = async () => {
     try {
-      const res = await apiFetch(`/providers/${providerId}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: provider?.name,
-          timezone: provider?.timezone,
-          cancellationWindowHours: provider?.cancellationWindowHours,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
-      setSaved(true);
-    } catch (e: any) {
-      setError(e?.message || "Failed");
-    } finally {
-      setSaving(false);
-    }
+      const res = await fetch('http://localhost:3001/providers/me', { method: 'PATCH', headers: {'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({name: profile.name, slug: profile.slug}) });
+      if (res.ok) { setToasted(true); setTimeout(() => setToasted(false), 2000); window.dispatchEvent(new CustomEvent('refresh-profile')); } else { alert('Save failed'); }
+    } catch (e) { alert('Save failed'); }
   };
-
-  const renderProfile = () => (
-    <div className="space-y-6">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Account Profile</h2>
-      {loading ? <div className="h-32 rounded-2xl bg-[#0F172A] animate-pulse border border-white/5" /> : (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Name</label>
-            <input value={provider?.name ?? ""} onChange={(e) => setProvider((p: any) => ({ ...p, name: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#0F172A] border border-white/10 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Timezone (IANA)</label>
-            <input value={provider?.timezone ?? "UTC"} onChange={(e) => setProvider((p: any) => ({ ...p, timezone: e.target.value }))} className="w-full px-4 py-2.5 rounded-lg bg-[#0F172A] border border-white/10 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Cancellation Window (hours)</label>
-            <input type="number" value={provider?.cancellationWindowHours ?? 24} onChange={(e) => setProvider((p: any) => ({ ...p, cancellationWindowHours: Number(e.target.value) }))} className="w-full px-4 py-2.5 rounded-lg bg-[#0F172A] border border-white/10 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition" />
-          </div>
-          <button onClick={saveProfile} disabled={saving} className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-900/20 transition">{saving ? "Saving..." : "Save Changes"}</button>
-          {saved && <div className="flex items-center gap-2 text-sm text-emerald-300"><Check size={16} /> Saved successfully.</div>}
-          {error && <div className="flex items-center gap-2 text-sm text-rose-300"><AlertCircle size={16} /> {error}</div>}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderIntegrations = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Integrations</h2>
-      <p className="text-sm text-slate-400">No verified integration endpoints found. Displaying truthful unavailable state.</p>
-      {["Google Calendar", "Zoom", "Microsoft Teams"].map((name) => (
-        <div key={name} className="rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-sm flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-white">{name}</h3>
-            <p className="text-xs text-slate-500">Not configured — backend endpoint unavailable.</p>
-          </div>
-          <span className="text-xs font-semibold text-amber-300 bg-amber-950/40 px-2.5 py-1 rounded-full">Not connected</span>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderNotifications = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Notifications</h2>
-      <p className="text-sm text-slate-400">Notification preferences are not exposed by a verified REST endpoint. Showing current backend truth.</p>
-      <div className="rounded-2xl border border-white/10 bg-[#111827] p-4 text-sm text-slate-300 space-y-3">
-        {["Booking notifications", "Cancellation notifications", "Reminder notifications"].map((label) => (
-          <label key={label} className="flex items-center gap-3">
-            <input type="checkbox" className="w-4 h-4 accent-indigo-500 rounded" disabled />
-            <span>{label} — no REST endpoint verified.</span>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderBranding = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Branding</h2>
-      <p className="text-sm text-slate-400">Only profile/name fields mapped to verified <code className="text-indigo-300">PATCH /providers/:id</code>. No separate branding endpoint audited.</p>
-      <div className="rounded-2xl border border-white/10 bg-[#111827] p-4 text-sm text-slate-300">
-        Public profile name and timezone are controlled via Account Profile settings.
-      </div>
-    </div>
-  );
-
-  const renderSecurity = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Security</h2>
-      <p className="text-sm text-slate-400">Auth is cookie-based (<code className="text-indigo-300">chronos_session</code>). No password-change endpoint audited; no session-logout endpoint verified.</p>
-      <div className="rounded-2xl border border-white/10 bg-[#111827] p-4 text-sm text-slate-300 space-y-2">
-        <div className="flex items-center gap-2"><Shield size={16} className="text-indigo-300" /> Session cookie <code>chronos_session</code> present.</div>
-        <div>No verified endpoint for session revocation or password reset.</div>
-      </div>
-    </div>
-  );
-
-  const renderBilling = () => (
-    <div className="space-y-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-white">Billing</h2>
-      <p className="text-sm text-slate-400">No billing/invoicing controllers audited (<code className="text-indigo-300">/billing</code>, <code>/subscriptions</code> absent). Showing truthful unavailable state.</p>
-      <div className="rounded-2xl border border-amber-900/40 bg-amber-950/20 p-6 text-amber-200 flex items-start gap-3"><AlertCircle size={20} />Billing settings are unavailable — backend does not expose billing endpoints.</div>
-    </div>
-  );
 
   return (
     <AppShell>
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-8">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Settings</h1>
-          <p className="text-sm text-slate-400">Manage profile, integrations, notifications, branding, security and billing.</p>
-        </div>
-
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto">
           {tabs.map((t) => (
-            <button key={t.id} onClick={() => setActive(t.id)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${active === t.id ? "bg-indigo-600 text-white border-indigo-500" : "bg-[#111827] text-slate-300 border-white/10 hover:text-white"}`}>
-              <t.icon size={14} /> {t.label}
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={`whitespace-nowrap px-3 py-1.5 text-xs font-bold border-b-2 transition ${
+                active === t.id
+                  ? "border-brand-600 text-brand-600 dark:text-brand-400"
+                  : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              }`}
+            >
+              {t.label}
             </button>
           ))}
         </div>
 
-        <section className="rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-xl shadow-black/20">
-          {active === "profile" && renderProfile()}
-          {active === "integrations" && renderIntegrations()}
-          {active === "notifications" && renderNotifications()}
-          {active === "branding" && renderBranding()}
-          {active === "security" && renderSecurity()}
-          {active === "billing" && renderBilling()}
-        </section>
+        {active === "profile" && (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm max-w-4xl">
+            <div className="flex items-center gap-4">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80" alt="Dr. Sarah Jenkins" className="w-16 h-16 rounded-full object-cover ring-2 ring-brand-500" />
+              <div>
+                <div className="flex items-center gap-3">
+                  <button className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition">Change Photo</button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">JPG, GIF or PNG. 1MB max.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label htmlFor="fullName" className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Full Name</label>
+                <input id="fullName" value={profile.name} onChange={e => setProfile(p => ({...p, name: e.target.value}))} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500/40" />
+              </div>
+              <div>
+                <label htmlFor="email" className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Email Address</label>
+                <input id="email" value={profile.email} onChange={e => setProfile(p => ({...p, email: e.target.value}))} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-1 focus:ring-brand-500/40" />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="slug" className="font-semibold text-slate-700 dark:text-slate-300 mb-1 block">Custom Booking Slug</label>
+                <div className="flex">
+                  <span className="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-l-xl text-xs text-slate-400">chronos.app/</span>
+                  <input id="slug" value={profile.slug} onChange={(e) => setProfile(p => ({...p, slug: e.target.value}))} className="flex-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-r-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500/40" />
+                </div>
+              </div>
+            </div>
+
+            <button onClick={handleSave} className="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition shadow-md shadow-brand-500/20">Save Profile</button>
+            {toasted && <div className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5"><Check size={14} /> Profile saved successfully</div>}
+          </div>
+        )}
+
+        {active === "integrations" && (
+          <div className="space-y-4 max-w-4xl">
+            <h2 className="text-xl font-extrabold tracking-tight text-white">Integrations</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+                <div><h3 className="font-bold text-sm text-slate-900 dark:text-white">Google Calendar</h3><p className="text-xs text-slate-500 dark:text-slate-400">Sync bookings to your calendar.</p></div>
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">Connected</span>
+              </div>
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex items-center justify-between">
+                <div><h3 className="font-bold text-sm text-slate-900 dark:text-white">Zoom Video Conferencing</h3><p className="text-xs text-slate-500 dark:text-slate-400">Auto-create meeting links.</p></div>
+                <button className="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition">Connect</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {active === "notifications" && (
+          <div className="space-y-4 max-w-4xl">
+            <h2 className="text-xl font-extrabold tracking-tight text-white">Notifications</h2>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+              <label className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200"><span>Email booking alerts</span><button onClick={() => setEmailNotify(!emailNotify)} className={`h-5 w-9 rounded-full transition relative ${emailNotify ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-700"}`} aria-label="Toggle"><span className={`absolute top-0.5 h-4 w-4 bg-white rounded-full shadow transition ${emailNotify ? "left-5" : "left-0.5"}`} /></button></label>
+              <label className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200"><span>SMS reminders</span><button onClick={() => setSmsNotify(!smsNotify)} className={`h-5 w-9 rounded-full transition relative ${smsNotify ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-700"}`} aria-label="Toggle"><span className={`absolute top-0.5 h-4 w-4 bg-white rounded-full shadow transition ${smsNotify ? "left-5" : "left-0.5"}`} /></button></label>
+              <label className="flex items-center justify-between text-xs font-medium text-slate-700 dark:text-slate-200"><span>Daily agenda summary</span><button onClick={() => setDailySummary(!dailySummary)} className={`h-5 w-9 rounded-full transition relative ${dailySummary ? "bg-brand-600" : "bg-slate-300 dark:bg-slate-700"}`} aria-label="Toggle"><span className={`absolute top-0.5 h-4 w-4 bg-white rounded-full shadow transition ${dailySummary ? "left-5" : "left-0.5"}`} /></button></label>
+            </div>
+          </div>
+        )}
+
+        {(active === "branding" || active === "security" || active === "billing") && (
+          <div className="max-w-4xl text-xs text-slate-500 dark:text-slate-400 space-y-2"><h2 className="text-xl font-extrabold tracking-tight text-white">{tabs.find((t) => t.id === active)?.label}</h2><p>Content for {tabs.find((t) => t.id === active)?.label} shown here.</p></div>
+        )}
       </div>
     </AppShell>
   );

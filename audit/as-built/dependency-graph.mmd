@@ -1,0 +1,6 @@
+graph LR
+  API["apps/api (NestJS)"] --> PRISMA["@prisma/client / prisma"]
+  API --> NEST["@nestjs/*"]
+  WEB["apps/web (Next.js)"] --> NEXT["next / react"]
+  WEB --> API_CLIENT["lib/api.ts -> API"]
+  PRISMA --> PG[(PostgreSQL 13.22 / 5433)]

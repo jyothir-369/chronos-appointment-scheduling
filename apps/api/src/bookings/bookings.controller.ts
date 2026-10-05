@@ -26,7 +26,7 @@ export class BookingsController {
     const sessionClientId = extractClientFromCookie(cookie);
     const req: BookingRequest = {
       slotId: body.slot_id,
-      clientId: sessionClientId || body.email || 'anonymous',
+      clientId: sessionClientId || body.email || body.client_name || 'anonymous',
       ...(idempotencyKey !== undefined || body.idempotency_key !== undefined
         ? { idempotencyKey: idempotencyKey || body.idempotency_key }
         : {}),

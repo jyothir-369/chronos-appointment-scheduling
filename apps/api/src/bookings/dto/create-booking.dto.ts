@@ -6,4 +6,6 @@ export class CreateBookingDto {
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
   @IsOptional() @IsString() event_type_id?: string;
   @IsOptional() @IsString() idempotency_key?: string;
+  @IsOptional() @IsString() client_timezone?: string;
+  @IsOptional() @IsString() timezone?: string;
 }

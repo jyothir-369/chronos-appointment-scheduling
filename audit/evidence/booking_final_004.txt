@@ -1,0 +1,2 @@
+{"message":"slot_unavailable","error":"Conflict","statusCode":409}
+HTTP 409
