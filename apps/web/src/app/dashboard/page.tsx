@@ -1,5 +1,5 @@
-﻿"use client";
-import NewAppointmentForm from "../components/NewAppointmentForm";
+"use client";
+import NewAppointmentForm from "../../components/NewAppointmentForm";
 // DATA SOURCE: real API (USE_MOCK disabled by default); switch to mock with USE_MOCK_DATA=true
 import React from "react";
 import { AppShell } from "../components/AppShell";

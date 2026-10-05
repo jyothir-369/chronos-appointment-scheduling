@@ -6,6 +6,7 @@ import {
   LayoutDashboard, CalendarDays, BookOpen, Sparkles, Clock, Users,
   BarChart3, Receipt, PieChart, SlidersHorizontal, ChevronDown,
   ExternalLink, Search, Plus, Video, Phone, MapPin, Link2,
+  Bell, Sun
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
 import { useState, useEffect } from 'react';
@@ -108,6 +109,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => { window.dispatchEvent(new CustomEvent("open-new-appointment")); }} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition"><Plus size={14} /> New Appointment</button>
+              <button aria-label="Notifications" onClick={() => window.dispatchEvent(new CustomEvent("open-notifications"))} className="relative h-9 w-9 rounded-xl bg-[#111827] border border-white/10 hover:border-white/20 text-slate-300 hover:text-white flex items-center justify-center transition"><Bell size={16} /><span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 border border-[#080D18]" /></button>
+              <button aria-label="Toggle theme" onClick={() => setDark(d => !d)} className="h-9 w-9 rounded-xl bg-[#111827] border border-white/10 hover:border-white/20 text-amber-300 hover:text-amber-200 flex items-center justify-center transition"><Sun size={16} /></button>
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 border-2 border-[#080D18] shadow-md relative"><span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-rose-500 border-2 border-[#080D18]" /></div>
               <div ref={profileRef} className="relative">
                 <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-haspopup="true" aria-label="Profile menu" className="text-xs font-medium text-white hover:text-indigo-300 transition flex items-center gap-1">{profileName || "Dr. Sarah Jenkins"} <ChevronDown size={12} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} /></button>
