@@ -68,6 +68,6 @@ describe('ReminderQueueManager — idempotency & safe retry (§6 FR8)', () => {
     expect(count).toBe(2); // one per offset
 
     // Verify BullMQ .add was called exactly 2 times (offsets length)
-    expect(mockQueue.add).toHaveBeenCalledTimes”。《INSTANS>>*/
+    expect(mockQueue.add).toHaveBeenCalledTimes(2);
   });
 });

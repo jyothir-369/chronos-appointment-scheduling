@@ -135,7 +135,7 @@ export default function CalendarPage() {
                     const day = i + 1;
                     const current = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
                     const dayBookings = visibleBookings.filter((b: any) => {
-                      const start = new Date(b.slot_start_utc || b.slotStartUtc || "");
+                      const start = new Date((b.slot_start_utc || b.slotStartUtc || "") + "Z");
                       return start.getUTCDate() === current.getUTCDate() && start.getUTCMonth() === current.getUTCMonth();
                     });
                     return (

@@ -1,0 +1,1 @@
+NOTE: Data lineage not fully traced (no network capture completed). KPI sources inferred: /dashboard uses hardcoded/demo values plus API fetch; /calendar uses slots table; /appointments uses bookings; /clients uses clients table; /reports and /analytics derive from bookings/services. Many elements marked HARDKODED / MOCK in prototype.

@@ -1,0 +1,1 @@
+# JOURNEYS (actual stack, 00c5746)\n\nJ1 create: UI -> POST /bookings -> DB (empty) -> response 201 (expected) [OK if DB seeded, BROKEN now]\nJ2 view schedule: UI -> GET /slots -> DB -> render [PARTIAL: empty]

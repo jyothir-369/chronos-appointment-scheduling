@@ -1,0 +1,21 @@
+Chronos Database Runtime Identity
+=================================
+Captured: 2026-10-05T17:23:34.2927797+05:30
+
+Host: 127.0.0.1
+Port: 5433
+Database: chronos
+User: chronos
+
+Server:
+PostgreSQL 13.22
+
+Current counts:
+providers=5
+clients=3
+slots=85
+bookings=0
+reminders=0
+
+Docker PostgreSQL is NOT the active Chronos database.
+Native PostgreSQL process owns port 5433.

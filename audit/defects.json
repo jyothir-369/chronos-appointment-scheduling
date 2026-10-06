@@ -1,0 +1,1 @@
+{"defects":[{"id":"D001","title":"DB password \"localdev\" exposed in .env and git history","severity":"BLOCKER","area":"security","location":"apps/api/.env:4; .env line; commits c5283db,03938f3,032c3cd","evidence":"[CODE] grep \"localdev\" .env apps/api/.env; [CMD] git log -S \"localdev\"","root_cause":"config","related":"F-001","effort":"S","fix_phase":"P1-foundation"}]}

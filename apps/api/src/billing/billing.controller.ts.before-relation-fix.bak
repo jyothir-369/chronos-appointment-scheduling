@@ -1,0 +1,40 @@
+import { Controller, Get } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+@Controller('billing')
+export class BillingController {
+  private readonly prisma = new PrismaClient();
+
+  @Get()
+  async getBilling() {
+    const [bookingsThisMonth, eventTypes, clients] = await Promise.all([
+      this.prisma.booking.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+        },
+      }),
+      this.prisma.eventType.count(),
+      this.prisma.client.count(),
+    ]);
+
+    const completedBookings = await this.prisma.booking.findMany({
+      where: { status: 'completed' },
+      include: { eventType: true },
+      take: 50,
+    }).catch(() => []);
+
+    const revenueEstimate = completedBookings.reduce((sum, b) => {
+      const price = b.eventType?.price ?? 0;
+      return sum + (typeof price === 'number' ? price : 0);
+    }, 0);
+
+    return {
+      plan: { name: 'Professional', status: 'active', billingCycle: 'monthly' },
+      usage: { bookingsThisMonth, eventTypes, clients },
+      revenue: { estimatedRevenue: revenueEstimate, completedBookings: completedBookings.length, currency: 'USD' },
+      invoices: [],
+    };
+  }
+}

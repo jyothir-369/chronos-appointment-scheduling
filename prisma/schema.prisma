@@ -36,7 +36,7 @@ model Provider {
   name                    String
   timezone                String
   slug                    String   @unique
-  cancellationWindowHours Int
+  cancellationWindowHours Int @map("cancellation_window_hours")
   createdAt               DateTime @default(now()) @map("created_at")
   updatedAt               DateTime @updatedAt @map("updated_at")
 
@@ -93,6 +93,7 @@ model Booking {
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   eventTypeId String? @map("event_type_id")
+  eventType EventType? @relation(fields: [eventTypeId], references: [id], onDelete: SetNull)
 
   status      BookingStatus @default(booked)
   version     Int           @default(0)
@@ -139,6 +140,7 @@ model EventType {
   active          Boolean  @default(true)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+  bookings      Booking[]
 
   @@index([providerId])
   @@index([slug])
@@ -177,4 +179,37 @@ model ReminderJob {
   @@unique([bookingId, offsetMinutes])
   @@index([status, fireAtUtc])
   @@map("reminder_jobs")
+}
+
+model Activity {
+  id         String   @id @default(uuid())
+  action     String
+  bookingId  String?  @map("booking_id")
+  providerId String?  @map("provider_id")
+  clientId   String?  @map("client_id")
+  metadata   String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([providerId])
+  @@index([clientId])
+  @@map("activity")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  type       String
+  providerId String?  @map("provider_id")
+  clientId   String?  @map("client_id")
+  bookingId  String?  @map("booking_id")
+  title      String?
+  message    String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([providerId])
+  @@index([clientId])
+  @@index([read])
+  @@map("notifications")
 }

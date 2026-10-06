@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info: {title: Chronos API (inferred), version: "0.0.0-inferred"}
+paths:
+  /bookings:
+    get: {responses: {200: {description: list}}}
+    post: {requestBody: {content: {application/json: {schema: {type: object}}}}, responses: {201: {description: created}, 400: {description: bad input}}}
+  /bookings/{id}/cancel:
+    patch: {responses: {200: {description: cancelled}}}
+  /bookings/{id}/reschedule:
+    patch: {responses: {200: {description: rescheduled}}}

@@ -1,7 +1,10 @@
+import dotenv from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import { CorrelationInterceptor } from './interceptors/correlation.interceptor.js';
+
+dotenv.config({ path: new URL('../.env', import.meta.url) });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

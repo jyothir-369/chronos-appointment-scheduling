@@ -1,99 +1,92 @@
 "use client";
 import React from "react";
 import { AppShell } from "../components/AppShell";
-import { Badge } from "../components/Badge";
-import { EmptyState, LoadingState } from "../components/States";
+import { Search, Mail, Phone } from "lucide-react";
 import { apiFetch } from "../../lib/api";
-import { Search, User, Mail, Phone, Building2, Sparkles, AlertCircle } from "lucide-react";
 
 export default function ClientsPage() {
   const [clients, setClients] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [query, setQuery] = React.useState("");
-  const [selected, setSelected] = React.useState<any>(null);
 
   React.useEffect(() => {
-    setLoading(true);
+    setLoading(true); setError("");
     apiFetch("/clients", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r)))
+      .then(async (r) => {
+        if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d?.message || d?.error || `Failed (${r.status})`); }
+        return r.json();
+      })
       .then((data) => setClients(Array.isArray(data) ? data : []))
-      .catch((e) => setError(e?.message || "Failed"))
+      .catch((e: any) => setError(e?.message || "Failed to load"))
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = clients.filter((c: any) => {
-    const q = query.toLowerCase();
-    return (c.name || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.company || c.organization || "").toLowerCase().includes(q) || (c.phone || "").includes(q);
-  });
+  const filtered = clients.filter(
+    (c: any) =>
+      (c.name || "").toLowerCase().includes(query.toLowerCase()) ||
+      (c.company || "").toLowerCase().includes(query.toLowerCase()) ||
+      (c.email || "").toLowerCase().includes(query.toLowerCase()) ||
+      (c.phone || "").includes(query)
+  );
 
   return (
     <AppShell>
-      <div className="max-w-6xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">Clients</h1>
-        <p className="text-sm text-slate-400 mb-6">Directory of clients with verified backend data from <code className="text-indigo-300">GET /clients</code>.</p>
-
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, email, company, phone..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#111827] border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition"
-          />
+      <div className="max-w-6xl mx-auto px-6 py-10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Clients Directory</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">View and manage contact profiles, booking history, and revenues.</p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search clients..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500/40 transition"
+            />
+          </div>
         </div>
-
-        {loading && <LoadingState />}
-        {error && <div className="rounded-2xl border border-rose-900 bg-rose-950/40 p-6 text-rose-200 flex items-start gap-3"><AlertCircle size={20} />{error}</div>}
-        {!loading && !error && filtered.length === 0 && <EmptyState icon={Sparkles} title="No clients" message="No clients match your search or the backend returned none."></EmptyState>}
-
-        {!loading && !error && filtered.length > 0 && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((c: any) => (
-              <button key={c.id} onClick={() => setSelected(c)} className="text-left rounded-2xl border border-white/10 bg-[#111827] p-5 shadow-xl shadow-black/20 hover:border-indigo-500/30 transition">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold text-sm">{(c.name || "").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</div>
+        {loading && <div className="text-xs text-slate-400">Loading clients...</div>}
+        {error && <div className="rounded-2xl border border-rose-900 bg-rose-950/40 p-4 text-rose-200 text-xs">{error}</div>}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((c: any) => (
+            <a key={c.id || c.email} href="#" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between group" onClick={(e) => { e.preventDefault(); alert("Client detail not yet implemented."); }}>
+              <div>
+                <div className="flex items-center gap-3">
+                  <img src={c.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"} alt={c.name || "Client"} className="w-12 h-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-slate-800" />
                   <div>
-                    <div className="font-bold text-white">{c.name || "Unnamed"}</div>
-                    <div className="text-xs text-slate-400">{c.email || "—"}</div>
+                    <div className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">{c.name || "Unknown"}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{c.company || "—"}</div>
                   </div>
                 </div>
-                <div className="text-xs text-slate-400 space-y-1">
-                  {c.company || c.organization ? <div className="flex items-center gap-1.5"><Building2 size={12} /> {c.company || c.organization}</div> : null}
-                  {c.phone ? <div className="flex items-center gap-1.5"><Phone size={12} /> {c.phone}</div> : null}
+                <div className="mt-4 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-2"><Mail size={12} /> {c.email || "—"}</div>
+                  <div className="flex items-center gap-2"><Phone size={12} /> {c.phone || "—"}</div>
                 </div>
-                <div className="mt-3 flex gap-2"><Badge variant="info">Profile</Badge></div>
-              </button>
-            ))}
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                <div className="flex gap-4">
+                  <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bookings</div><div className="font-bold text-slate-900 dark:text-white">{c.bookings || 0}</div></div>
+                  <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Spent</div><div className="font-bold text-emerald-600 dark:text-emerald-400">${c.totalSpent || 0}</div></div>
+                </div>
+                <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold">Profile</span>
+              </div>
+            </a>
+          ))}
+        </div>
+        {!loading && !error && filtered.length === 0 && clients.length > 0 && (
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">
+            <div className="text-sm font-bold text-slate-900 dark:text-white">No clients found</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Try adjusting your search query.</div>
           </div>
         )}
-
-        {/* Drawer for selected client */}
-        {selected && (
-          <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelected(null)} />
-            <aside className="relative w-full max-w-md bg-[#111827] border-l border-white/10 h-full overflow-y-auto shadow-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-extrabold text-white">Client Details</h2>
-                <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-white/10 text-slate-300" aria-label="Close">✕</button>
-              </div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold text-xl">{(selected.name || "").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}</div>
-                <div>
-                  <div className="font-bold text-white text-lg">{selected.name || "—"}</div>
-                  <div className="text-xs text-slate-400">ID: {selected.id ? String(selected.id).slice(0, 8) : "—"}</div>
-                </div>
-              </div>
-              <div className="space-y-3 text-sm text-slate-300">
-                <div className="flex items-center gap-2"><Mail size={16} className="text-indigo-300" /> {selected.email || "—"}</div>
-                <div className="flex items-center gap-2"><Phone size={16} className="text-indigo-300" /> {selected.phone || "—"}</div>
-                <div className="flex items-center gap-2"><Building2 size={16} className="text-indigo-300" /> {selected.company || selected.organization || "—"}</div>
-              </div>
-              <div className="mt-6 border-t border-white/10 pt-4">
-                <h3 className="font-bold text-white mb-2">Booking History</h3>
-                <p className="text-xs text-slate-400">Backend: <code className="text-indigo-300">GET /bookings</code> filtered by client. No separate history endpoint audited — derived from bookings.</p>
-              </div>
-            </aside>
+        {!loading && !error && clients.length === 0 && (
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center shadow-sm">
+            <div className="text-sm font-bold text-slate-900 dark:text-white">No clients</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">The clients list is empty.</div>
           </div>
         )}
       </div>

@@ -5,9 +5,11 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, CalendarDays, BookOpen, Sparkles, Clock, Users,
   BarChart3, Receipt, PieChart, SlidersHorizontal, ChevronDown,
-  ExternalLink, Moon, Sun, Bell, Search, Plus, Video, Phone, MapPin,
+  ExternalLink, Search, Plus, Video, Phone, MapPin, Link2,
+  Bell, Sun
 } from "lucide-react";
 import { CommandPalette } from "./CommandPalette";
+import { useState, useEffect } from 'react';
 
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,6 +29,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
   const [dark, setDark] = React.useState(true);
   const [demoEmpty, setDemoEmpty] = React.useState(false);
+  const [profileName, setProfileName] = React.useState('Dr. Sarah Jenkins');
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  useEffect(() => { fetch('http://localhost:3001/providers/me',{credentials:'include'}).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.name) setProfileName(d.name); if(d&&d.avatar_url) setAvatarUrl(d.avatar_url);}); }, []);
+    const profileRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("click", onClick); document.removeEventListener("keydown", onKey); };
+  }, []);
 
   return (
     <div className={`${dark ? "dark" : ""} min-h-screen bg-[#080D18] text-[#F8FAFC] font-sans antialiased selection:bg-indigo-500/30`}>
@@ -48,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="px-3 mb-2">
             <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#111827] border border-white/10 hover:border-white/20 transition text-sm text-left">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-              <span className="font-medium text-white truncate">Acme Advisory Team</span>
+              <span className="text-sm font-medium text-white truncate">Acme Advisory Team</span>
               <ChevronDown size={14} className="ml-auto text-slate-400" />
             </button>
           </div>
@@ -61,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link key={n.href} href={n.href} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${active ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20" : "text-slate-300 hover:text-white hover:bg-white/5"}`}>
                   <n.icon size={18} />
                   <span className="truncate">{n.label}</span>
-                  {n.badge && <span className="ml-auto text-[10px] font-bold bg-amber-500 text-amber-950 px-1.5 py-0.5 rounded-full">2</span>}
+                  {n.badge && <span className="ml-auto text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded-full">5</span>}
                   {n.pill && <span className="ml-auto text-[10px] font-bold bg-indigo-600 text-white px-1.5 py-0.5 rounded-full">New</span>}
                 </Link>
               );
@@ -88,14 +104,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-1 max-w-2xl mx-auto">
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="Search appointments, clients... (Ctrl+K)" className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#111827] border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition" />
+                <input type="text" placeholder="Search appointments, clients..." className="w-full pl-10 pr-12 py-2.5 rounded-xl bg-[#111827] border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-500 bg-[#111827] border border-white/10 rounded px-1.5 py-0.5">Ctrl K</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setDark(!dark)} className="p-2 rounded-xl hover:bg-white/10 text-slate-300 transition" aria-label="Toggle theme">{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
-              <button className="relative p-2 rounded-xl hover:bg-white/10 text-slate-300 transition" aria-label="Notifications"><Bell size={18} /><span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[#080D18]" /></button>
-              <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-900/20 transition"><Plus size={16} /> New Appointment</button>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 border-2 border-[#080D18] shadow-md" />
+              <button onClick={() => { window.dispatchEvent(new CustomEvent("open-new-appointment")); }} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-500/20 transition"><Plus size={14} /> New Appointment</button>
+              <button aria-label="Notifications" onClick={() => window.dispatchEvent(new CustomEvent("open-notifications"))} className="relative h-9 w-9 rounded-xl bg-[#111827] border border-white/10 hover:border-white/20 text-slate-300 hover:text-white flex items-center justify-center transition"><Bell size={16} /><span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 border border-[#080D18]" /></button>
+              <button aria-label="Toggle theme" onClick={() => setDark(d => !d)} className="h-9 w-9 rounded-xl bg-[#111827] border border-white/10 hover:border-white/20 text-amber-300 hover:text-amber-200 flex items-center justify-center transition"><Sun size={16} /></button>
+              <img src={avatarUrl || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80"} alt={profileName} className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 border-2 border-[#080D18] shadow-md object-cover" />
+              <div ref={profileRef} className="relative">
+                <button onClick={() => setOpen(o => !o)} aria-expanded={open} aria-haspopup="true" aria-label="Profile menu" className="text-xs font-medium text-white hover:text-indigo-300 transition flex items-center gap-1">{profileName || "Dr. Sarah Jenkins"} <ChevronDown size={12} className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`} /></button>
+                {open && (
+                  <div className="absolute right-0 top-full mt-2 w-44 rounded-xl bg-[#111827] border border-white/10 shadow-2xl z-50 overflow-hidden">
+                    <a href="#" onClick={(e) => { e.preventDefault(); setOpen(false); window.location.href = "/settings"; }} className="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Profile Settings</a>
+                    <a href="#" onClick={() => setOpen(false)} className="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Preferences</a>
+                    <button onClick={async () => { setOpen(false); await fetch("http://localhost:3001/auth/logout", { method: "POST", credentials: "include" }); window.location.href = "/login"; }} className="w-full text-left px-4 py-2.5 text-sm text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 transition">Sign Out</button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
           <div className="max-w-[1440px] mx-auto px-8 py-8">

@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --reporter=verbose",
-    "test:unit": "vitest run --reporter=verbose --run"
+    "test:unit": "vitest run --reporter=verbose --run",
+    "db:seed": "ts-node src/seed/development.seed.ts"
   },
   "dependencies": {
     "@chronos/contracts": "workspace:*",
@@ -29,6 +30,7 @@
     "bullmq": "^5.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+    "dotenv": "^18.0.5",
     "express-rate-limit": "^7.1.5",
     "ioredis": "^5.3.2",
     "nestjs-zod": "^5.5.0",

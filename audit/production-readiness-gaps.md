@@ -1,0 +1,2 @@
+=== PRODUCTION READINESS GAPS ===
+1. DB bookings=0 (core journey impossible). 2. notifications/activity DB tables missing (post-fix schema but no tables). 3. compose DB port blocked (5433). 4. billing has no payments table. 5. dashboard analytics/mock. 6. notifications.module missing service provider. 7. TypeScript passes but integration unverified for mutation flows. 8. Redis/queue not fully exercised (reminders=0). 9. Security/auth dev bypass present; production boot fails (dependency error). 10. No Playwright/e2e automated evidence (only static inspection).
