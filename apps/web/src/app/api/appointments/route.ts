@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     const statusFilter = url.searchParams.get("status") || "all";
 
     // Call real NestJS backend; do NOT query DB directly
-    const backendUrl = new URL("/bookings", API_URL);
+    const backendUrl = new URL("/appointments", API_URL);
     const backendRes = await fetch(backendUrl.toString(), {
       credentials: "include",
       headers: cookie ? { cookie } : {},

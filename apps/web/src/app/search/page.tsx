@@ -5,7 +5,7 @@ import { Search, AlertCircle } from "lucide-react";
 
 export default function SearchPage() {
   const [q, setQ] = React.useState("");
-  const [results, setResults] = React.useState<any[]>([]);
+  const [results, setResults] = React.useState<any>({ clients: [], eventTypes: [], total: 0 });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -16,7 +16,7 @@ export default function SearchPage() {
       const r = await apiFetch(`/search?q=${encodeURIComponent(value)}`, { credentials: "include" });
       const data = await r.json();
       if (!r.ok) throw new Error(data?.message || data?.error || `Search failed (${r.status})`);
-      setResults(Array.isArray(data) ? data : []);
+      setResults(data?.results || { clients: [], eventTypes: [], total: 0 });
     } catch (e: any) {
       setError(e?.message || "Search failed");
       setResults([]);
@@ -48,12 +48,18 @@ export default function SearchPage() {
           <AlertCircle size={16} /> {error}
         </div>
       )}
-      {!loading && !error && results.length === 0 && q.trim() && <div className="text-sm text-slate-400">No results for “{q}”</div>}
+      {!loading && !error && (!results || (results.total || 0) === 0) && q.trim() && <div className="text-sm text-slate-400">No results for “{q}”</div>}
       <div className="space-y-3">
-        {results.map((r: any) => (
-          <a key={r.id || r.booking_id || r.slug} href="#" className="block rounded-xl border border-white/10 bg-[#111827] p-4 hover:border-white/20 transition">
-            <div className="font-semibold text-white">{r.title || r.name || r.eventType || "Result"}</div>
-            <div className="text-xs text-slate-400 mt-1">{r.status ? `Status: ${r.status}` : r.time ? `Time: ${r.time}` : r.id || r.booking_id ? `ID: ${r.id || r.booking_id}` : ""}</div>
+        {(results.clients || []).map((r: any) => (
+          <a key={r.id} href="#" className="block rounded-xl border border-white/10 bg-[#111827] p-4 hover:border-white/20 transition">
+            <div className="font-semibold text-white">{r.name || "Client"}</div>
+            <div className="text-xs text-slate-400 mt-1">{r.email || r.company || r.id}</div>
+          </a>
+        ))}
+        {(results.eventTypes || []).map((r: any) => (
+          <a key={r.id} href="#" className="block rounded-xl border border-white/10 bg-[#111827] p-4 hover:border-white/20 transition">
+            <div className="font-semibold text-white">{r.name || "Event Type"}</div>
+            <div className="text-xs text-slate-400 mt-1">{r.slug || r.id}</div>
           </a>
         ))}
       </div>
