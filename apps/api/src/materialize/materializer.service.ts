@@ -106,14 +106,7 @@ export class MaterializerService {
               stats.slotsSkipped += 1;
               continue;
             }
-            await this.prisma.slot.create({
-              data: {
-                providerId: p.id,
-                slotStartUtc: new Date(s.startUtc),
-                slotEndUtc: new Date(s.endUtc),
-                status: 'open',
-              },
-            });
+            await this.prisma.$executeRaw`INSERT INTO slots (provider_id, slot_start_utc, slot_end_utc, status, display_tz) VALUES (${p.id}, ${new Date(s.startUtc)}, ${new Date(s.endUtc)}, 'open', ${p.timezone || 'UTC'}) ON CONFLICT DO NOTHING`;
             stats.slotsCreated += 1;
           } catch (e: any) {
             // P2002 = unique constraint violation (already present — concurrent run)

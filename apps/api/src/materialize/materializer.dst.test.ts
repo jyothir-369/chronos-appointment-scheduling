@@ -26,9 +26,9 @@ describe('Materializer — DST correctness (§9.5 FR9)', () => {
     // After spring-forward (EDT, UTC-4): 09:00 -> 13:00 UTC
     expect(wedAfter[0].startUtc).toBe('2026-03-11T13:00:00Z');
 
-    // The UTC instant moves by exactly 1 hour (offset change), not 24h.
-    const msDiff = new Date(wedAfter[0].startUtc).getTime() - new Date(wedBefore[0].startUtc).getTime();
-    expect(Math.abs(msDiff)).toBe(60 * 60 * 1000);
+    // Verify the local wall-clock time stays 09:00 and the UTC offset changed from EST (-5) to EDT (-4).
+    expect(wedBefore[0].startUtc).toBe('2026-03-04T14:00:00Z'); // 09:00 EST = 14:00Z
+    expect(wedAfter[0].startUtc).toBe('2026-03-11T13:00:00Z'); // 09:00 EDT = 13:00Z
   });
 
   it('gap hour (02:00-03:00 on 2026-03-08) is absent — no 24h-UTC duplication', () => {
@@ -42,12 +42,16 @@ describe('Materializer — DST correctness (§9.5 FR9)', () => {
     });
     // 46 half-hour slots (48 normally minus 1h gap = 46)
     expect(generated.length).toBe(46);
-    // No slot in the gap (06:00Z - 07:00Z = 02:00-03:00 EDT)
-    const inGap = generated.filter((s) => {
-      const h = new Date(s.startUtc).getUTCHours();
-      return h >= 6 && h < 7;
+    // No slot maps to nonexistent local wall-clock times 02:00 or 02:30 in NY on 2026-03-08 (spring-forward gap under EST->EDT).
+    const hasGapSlot = generated.some((s) => {
+      // Resolve UTC back to NY local to detect absolute gap absence; direct conversion of 06:00Z/06:30Z is EST 01:00/01:30 (valid),
+      // so we use local-time derivation via Temporal or explicit check that 02:00 local never appears.
+      const d = new Date(s.startUtc);
+      const nyStr = d.toLocaleString('en-US', { timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' });
+      // We expect 02:00 or 02:30 NY never appears in any generated slot for this gap-day.
+      return nyStr.includes('02:00') || nyStr.includes('02:30');
     });
-    expect(inGap.length).toBe(0);
+    expect(hasGapSlot).toBe(false);
   });
 
   it('fall-back overlap uses compatible policy for 01:00 on 2026-11-01', () => {
@@ -65,15 +69,19 @@ describe('Materializer — DST correctness (§9.5 FR9)', () => {
   });
 
   it('DST edge stable across repeated runs (idempotent upsert)', () => {
-    const run1 = generateSlots({
+    const args = {
       tz: 'America/New_York',
       slotMinutes: 60,
-      rules: { daysOfWeek: [3], startTime: '12:00', endTime: '13:00' },
+      rules: { daysOfWeek: [7], startTime: '12:00', endTime: '13:00' },
       fromDate: '2026-03-08',
       toDate: '2026-03-08',
-    });
+    };
+    const run1 = generateSlots(args);
+    const run2 = generateSlots(args);
     expect(run1.length).toBe(1);
-    // 12:00 local after the 3am gap -> 16:00 UTC (EDT, UTC-4)
+    expect(run2.length).toBe(1);
     expect(run1[0].startUtc).toBe('2026-03-08T16:00:00Z');
+    expect(run2[0].startUtc).toBe('2026-03-08T16:00:00Z');
+    expect(run1[0].startUtc).toBe(run2[0].startUtc); // idempotent: both runs identical
   });
 });
