@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Headers, ConflictException, HttpCode, HttpStatus, Get, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Headers, ConflictException, HttpCode, HttpStatus, Get, Param, Patch, UnauthorizedException } from '@nestjs/common';
 import { Pool } from 'pg';
 import { createBooking, BookingRequest } from './bookings.service.js';
 import { rescheduleBooking } from './reschedule.service.js';
+import { ReminderQueueManager } from '../reminders/reminder.queue.js';
 import { evaluateCancellation } from './lifecycle.service.js';
 import { clock } from '@chronos/time';
 import { CreateBookingDto } from './dto/create-booking.dto.js';
@@ -14,13 +15,14 @@ function extractClientFromCookie(cookie?: string): string | null {
   return match ? match[1] : null;
 }
 
-async function getProviderIdFromSlot(pool: Pool, slotId: string): Promise<string | null> {
+async function getProviderIdFromSlot(pool: InstanceType<typeof Pool>, slotId: string): Promise<string | null> {
   const res = await pool.query('SELECT provider_id FROM slots WHERE id = $1', [slotId]);
   return res.rowCount ? res.rows[0].provider_id : null;
 }
 
 @Controller('bookings')
 export class BookingsController {
+  constructor(private readonly reminderQueue: ReminderQueueManager) {}
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBooking(
@@ -29,15 +31,23 @@ export class BookingsController {
     @Headers('cookie') cookie?: string
   ) {
     const sessionClientId = extractClientFromCookie(cookie);
+    if (!sessionClientId) {
+      throw new UnauthorizedException('chronos_session required');
+    }
+    // Validate session UUID format
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionClientId)) {
+      throw new UnauthorizedException('invalid session');
+    }
     const req: BookingRequest = {
       slotId: body.slot_id,
-      clientId: sessionClientId || body.email || body.client_name || 'anonymous',
+      clientId: sessionClientId,
+      eventTypeId: body.event_type_id || undefined,
       ...(idempotencyKey !== undefined || body.idempotency_key !== undefined
         ? { idempotencyKey: idempotencyKey || body.idempotency_key }
         : {}),
-      clientTimezone: 'UTC',
+      clientTimezone: body.client_timezone || 'UTC',
     };
-    const result = await createBooking(pool, req, clock.now().toString());
+    const result = await createBooking(pool, req, clock.now().toString(), this.reminderQueue);
     // Create notification for provider when booking created
     try {
       const providerId = await getProviderIdFromSlot(pool, req.slotId);
@@ -48,13 +58,18 @@ export class BookingsController {
     if (result.status === 201) return { status: 201, bookingId: result.bookingId, replay: result.replay };
     if (result.status === 409) throw new ConflictException(result.error || 'Slot unavailable');
     if (result.status === 422) throw new ConflictException(result.error || 'Idempotency conflict');
+    if (result.status === 400) {
+      const msg = result.error || 'Bad request';
+      if (msg.includes('event_type') || msg.includes('invalid_')) throw new ConflictException(msg);
+      return { status: 400, error: msg };
+    }
     throw new ConflictException(result.error || 'Booking failed');
   }
 
   @Get(':id')
   async getBooking(@Param('id') id: string, @Headers('cookie') cookie?: string) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const res = await pool.query(
       'SELECT b.id, b.slot_id, b.status, b.version, b.client_timezone, s.slot_start_utc, s.slot_end_utc FROM bookings b JOIN slots s ON b.slot_id = s.id WHERE b.id = $1 AND b.client_id::text = $2::text',
       [id, sessionClientId]
@@ -75,7 +90,7 @@ export class BookingsController {
   @Get()
   async listBookings(@Headers('cookie') cookie?: string) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const res = await pool.query(
       'SELECT b.id, b.slot_id, b.status, b.version, b.client_timezone, s.slot_start_utc, s.slot_end_utc FROM bookings b JOIN slots s ON b.slot_id = s.id WHERE b.client_id::text = $1::text ORDER BY b.created_at DESC',
       [sessionClientId]
@@ -95,7 +110,7 @@ export class BookingsController {
   @Patch(':id/status')
   async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @Headers('cookie') cookie?: string) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -107,6 +122,7 @@ export class BookingsController {
       if (!allowed.includes(body.status)) { await client.query('ROLLBACK'); return { status: 422, error: 'invalid_status' }; }
       await client.query('UPDATE bookings SET status = $1, version = version + 1 WHERE id = $2', [body.status, id]);
       await client.query('COMMIT');
+      if (body.status === 'cancelled') try { if (this.reminderQueue) await this.reminderQueue.cancelForBooking(id); } catch {}
       return { status: 200, booking: { id, status: body.status, version: b.version + 1 } };
     } catch (e: any) {
       await client.query('ROLLBACK').catch(()=>{});
@@ -121,7 +137,7 @@ export class BookingsController {
     @Headers('cookie') cookie?: string
   ) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     // Verify ownership
     const res = await pool.query('SELECT client_id, slot_id FROM bookings WHERE id = $1', [id]);
     if (res.rowCount === 0) return { status: 404, error: 'not_found' };
@@ -134,7 +150,7 @@ export class BookingsController {
       version: body.version,
       ifMatch: body.ifMatch,
       cancellationWindowHours: body.cancellationWindowHours ?? 24,
-    } as any, clock.now().toString());
+    } as any, clock.now().toString(), this.reminderQueue);
     return result;
   }
 
@@ -145,7 +161,7 @@ export class BookingsController {
     @Headers('cookie') cookie?: string
   ) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const res = await pool.query('SELECT status, version, client_id, slot_id FROM bookings WHERE id = $1', [id]);
     if (res.rowCount === 0) return { status: 404, error: 'not_found' };
     const b = res.rows[0];
@@ -172,6 +188,7 @@ export class BookingsController {
     await pool.query("UPDATE bookings SET status = 'cancelled', cancelled_at = now() WHERE id = $1", [id]);
     await pool.query("UPDATE slots SET status = 'open' WHERE id = $1", [b.slot_id]);
     await pool.query('COMMIT');
+    try { if (this.reminderQueue) await this.reminderQueue.cancelForBooking(b.id); } catch {}
     return { status: 204 };
   }
 
@@ -179,7 +196,7 @@ export class BookingsController {
   @Post(':id/confirm')
   async confirmBooking(@Param('id') id: string, @Headers('cookie') cookie?: string) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -203,7 +220,7 @@ export class BookingsController {
   @Post(':id/decline')
   async declineBooking(@Param('id') id: string, @Headers('cookie') cookie?: string) {
     const sessionClientId = extractClientFromCookie(cookie);
-    if (!sessionClientId) return { status: 401, error: 'unauthorized' };
+    if (!sessionClientId) throw new UnauthorizedException('unauthorized');
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -214,6 +231,7 @@ export class BookingsController {
       if (b.status !== 'booked') { await client.query('ROLLBACK'); return { status: 409, error: 'invalid_transition' }; }
       await client.query("UPDATE bookings SET status = 'cancelled', version = version + 1, cancelled_at = now() WHERE id = $1", [id]);
       await client.query('COMMIT');
+      try { if (this.reminderQueue) await this.reminderQueue.cancelForBooking(id); } catch {}
       return { status: 200, booking: { id, status: 'cancelled', version: b.version + 1 } };
     } catch (e: any) {
       await client.query('ROLLBACK').catch(() => {});
