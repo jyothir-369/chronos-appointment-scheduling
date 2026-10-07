@@ -1,4 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, UnauthorizedException } from '@nestjs/common';
+import { ProviderAuthGuard } from '../auth/provider-auth.guard.js';
 import { PrismaClient } from '@prisma/client';
 
 @Controller('reports')
@@ -6,11 +7,16 @@ export class ReportsController {
   private readonly prisma = new PrismaClient();
 
   @Get()
+  @UseGuards(ProviderAuthGuard)
   async getReports(
+    @Request() req: any,
     @Query('start') start?: string,
     @Query('end') end?: string,
   ) {
-    const where: any = {};
+    const providerId = req.provider?.id;
+    if (!providerId) throw new UnauthorizedException('Provider session required');
+
+    const where: any = { slot: { providerId } };
     if (start || end) {
       where.createdAt = {};
       if (start) where.createdAt.gte = new Date(start + (start.length === 10 ? "T00:00:00Z" : ""));
@@ -27,7 +33,6 @@ export class ReportsController {
 
       const completed = bookings.filter((b: any) => b.status === 'completed' || b.status === 'booked');
       const totalRevenue = completed.reduce((s: number, b: any) => {
-        // Derive from EventType price when available; no bookings.revenue column exists
         const price = (b.eventTypeId && b.eventType && typeof b.eventType.price === 'number') ? b.eventType.price : 0;
         return s + price;
       }, 0);
