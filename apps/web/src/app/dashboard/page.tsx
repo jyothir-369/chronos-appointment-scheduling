@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   React.useEffect(() => {
     setLoading(true); setError("");
-    apiFetch("/bookings", { credentials: "include" })
+    apiFetch("/appointments", { credentials: "include" })
       .then(async (r) => {
         const data = await r.json();
 
@@ -54,10 +54,18 @@ export default function DashboardPage() {
   }, []);
 
   const workspace = USE_MOCK ? getWorkspace() : null;
-  const metrics = USE_MOCK ? deriveDashboardMetrics(bookings.length ? bookings : getBookings()) : { total: bookings.length, percentChange: 0, todayCount: 0, estimatedValue: 0, paidCount: 0, occupancy: 0, busyDuration: 0 };
+  const metrics = {
+  total: bookings.length,
+  percentChange: 0,
+  todayCount: bookings.filter((b: any) => { const s = b.slot_start_utc || b.slotStartUtc || b.start || b.start_time || ''; if (!s) return false; const d = new Date(s + (s.endsWith('Z') ? '' : 'Z')); const n = new Date(); const tz = workspace?.timezone || 'UTC'; const dStr = d.toLocaleDateString('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }); const nStr = n.toLocaleDateString('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }); return dStr === nStr; }).length,
+  estimatedValue: 0,
+  paidCount: 0,
+  occupancy: bookings.length > 0 ? Math.min(100, Math.round(((bookings.filter((b:any) => b.status === 'confirmed' || b.status === 'booked').length) / bookings.length) * 100)) : 0,
+  busyDuration: 0,
+};
 
-  const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const hostTz = workspace?.timezone || "UTC";
+  const todayStr = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Kolkata" });
+  const hostTz = "Asia/Kolkata";
 
   const fetchSlots = React.useCallback(async () => {
     try {
@@ -69,6 +77,7 @@ export default function DashboardPage() {
     } catch { /* silent */ }
   }, []);
   React.useEffect(() => { fetchSlots(); }, [fetchSlots]);
+  React.useEffect(() => { setActivitiesLoading(true); apiFetch("/activity", { credentials: "include" }).then(async r => { if (r.ok) { const d = await r.json(); setActivities(Array.isArray(d.activities) ? d.activities.slice(0,5) : []); } else { setActivities([]); } }).catch(() => setActivities([])).finally(() => setActivitiesLoading(false)); }, []);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,14 +90,14 @@ export default function DashboardPage() {
   };
   const handleRetry = () => { window.location.reload(); };
 
-  const todayFiltered = bookings.filter(b => { const d = new Date(b.slot_start_utc); const n = new Date(); return d.getUTCFullYear()===n.getUTCFullYear() && d.getUTCMonth()===n.getUTCMonth() && d.getUTCDate()===n.getUTCDate(); }).sort((a,b)=> new Date(a.slot_start_utc).getTime()-new Date(b.slot_start_utc).getTime());
+  const todayFiltered = bookings.filter(b => { const s = b.slot_start_utc || b.slotStartUtc || b.start || b.start_time || ''; if (!s) return false; const d = new Date(s + (s.endsWith('Z') ? '' : 'Z')); const n = new Date(); const tz = workspace?.timezone || 'UTC'; const dStr = d.toLocaleDateString('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }); const nStr = n.toLocaleDateString('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }); return dStr === nStr; }).sort((a,b)=> new Date(a.slot_start_utc || a.slotStartUtc || '').getTime()-new Date(b.slot_start_utc || b.slotStartUtc || '').getTime());
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning, Sarah ðŸ‘‹</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white">Good morning, Sarah 👋</h1>
             <p className="text-sm text-slate-400 mt-1">Today's schedule â€” {metrics.todayCount} upcoming appointment{metrics.todayCount === 1 ? "" : "s"}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -101,7 +110,7 @@ export default function DashboardPage() {
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard label="Total Appointments" value={String(metrics.total)} sublabel="vs. 124 last month" delta={`${metrics.percentChange > 0 ? "+" : ""}${metrics.percentChange}%`} deltaUp={metrics.percentChange >= 0} icon={CalendarDays} />
-          <KpiCard label="Upcoming Today" value={String(metrics.todayCount)} sublabel="Next at 10:00 AM" delta="+2" deltaUp={true} icon={Clock} />
+          <KpiCard label="Upcoming Today" value={String(metrics.todayCount)} sublabel={"Next: " + (bookings.filter((b:any)=>{ const d=new Date(b.slotStartUtc||b.slot_start_utc||''); const n=new Date(); return d.getTime()>n.getTime(); }).sort((a:any,b:any)=>new Date(a.slotStartUtc||a.slot_start_utc||'').getTime()-new Date(b.slotStartUtc||b.slot_start_utc||'').getTime())[0] ? (()=>{ const b=bookings.filter((b:any)=>{ const d=new Date(b.slotStartUtc||b.slot_start_utc||''); return d.getTime()>new Date().getTime(); }).sort((a:any,b:any)=>new Date(a.slotStartUtc||a.slot_start_utc||'').getTime()-new Date(b.slotStartUtc||b.slot_start_utc||'').getTime())[0]; if(!b) return '—'; const d=new Date(b.slotStartUtc||b.slot_start_utc||''); return d.toLocaleString('en-US',{timeZone:'UTC',hour:'numeric',minute:'2-digit',hour12:true}); })() : '—')} delta="+2" deltaUp={true} icon={Clock} />
           <KpiCard label="Estimated Value" value={`$${metrics.estimatedValue.toLocaleString()}`} sublabel={`${metrics.paidCount} paid bookings`} delta="$4,850" deltaUp={true} icon={TrendingUp} />
           <KpiCard label="Occupancy Rate" value={`${metrics.occupancy}%`} sublabel="Optimal schedule load" delta="88%" deltaUp={metrics.occupancy >= 80} icon={Users} />
         </div>
@@ -111,7 +120,7 @@ export default function DashboardPage() {
           <section className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-xl shadow-black/20">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-extrabold tracking-tight text-white">Today's Schedule</h2>
-              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><Clock size={14} /> {todayStr} Â· <span className="text-indigo-300">{hostTz}</span></div>
+              <div className="text-xs font-medium text-slate-400 flex items-center gap-1.5"><Clock size={14} /> {todayStr} · <span className="text-indigo-300">{hostTz}</span></div>
             </div>
             {loading && <LoadingState />}
             {error && (
@@ -143,15 +152,16 @@ export default function DashboardPage() {
             {/* Recent Activity */}
             <section className="rounded-2xl border border-white/10 bg-[#111827] p-6 shadow-xl shadow-black/20">
               <h3 className="font-bold text-white mb-3">Recent Activity</h3>
-              {!loading && !error && bookings.length === 0 && <p className="text-xs text-slate-400">No recent bookings.</p>}
-              {!loading && !error && bookings.length > 0 && (
+              {activitiesLoading && <div className="text-xs text-slate-400">Loading...</div>}
+              {!activitiesLoading && activities.length === 0 && <EmptyState icon={Sparkles} title="No recent activity" message="Activity will appear here when actions occur." />}
+              {!activitiesLoading && activities.length > 0 && (
                 <div className="space-y-3">
-                  {bookings.slice(0,5).map((b:any) => (
-                    <div key={b.id} className="flex items-start gap-2.5 text-xs text-slate-300">
-                      <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${b.status === "confirmed" ? "bg-emerald-400" : b.status === "cancelled" ? "bg-rose-400" : "bg-amber-400"}`} />
+                  {activities.map((a: any) => (
+                    <div key={a.id || a.bookingId || a.createdAt} className="flex items-start gap-2.5 text-xs text-slate-300">
+                      <span className="mt-1 h-2 w-2 rounded-full shrink-0 bg-indigo-400" />
                       <div>
-                        <span className="font-semibold text-white">{b.eventType || "Booking"}</span>
-                        <span className="block text-slate-400">{b.clientName} Â· {new Date(b.slot_start_utc).toLocaleString("en-US", { timeZone: workspace?.timezone || "UTC", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" })}</span>
+                        <span className="font-semibold text-white">{a.action || "Activity"}</span>
+                        <span className="block text-slate-400">{a.bookingId ? `Booking ${a.bookingId}` : ""} · {a.createdAt ? new Date(a.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : ""}</span>
                       </div>
                     </div>
                   ))}
@@ -187,7 +197,7 @@ function KpiCard({ label, value, sublabel, delta, deltaUp, icon: Icon }: { label
 function AppointmentRow({ booking }: { booking: any }) {
   const hasMeeting = !!(booking.meetingUrl || booking.meeting_url);
   const loc = booking.location || "video";
-  const isBooked = booking.status === "booked" || booking.status === "BOOKED";
+  const isBooked = booking.status === "booked" || booking.status === "BOOKED" || booking.status === "confirmed" || booking.status === "CONFIRMED";
   const isVideo = (loc === "video" || !!booking.meetingUrl || !!booking.meeting_url);
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-[#0F172A] border border-white/5 hover:border-white/10 transition">
@@ -195,8 +205,8 @@ function AppointmentRow({ booking }: { booking: any }) {
         <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-300 flex items-center justify-center"><Clock size={18} /></div>
         <div>
           <div className="font-bold text-white text-sm">{booking.clientName || "Client"}</div>
-          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1"><Clock size={10} /> 10:00 AM Â· 30 min</div>
-          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><MapPin size={10} /><span>{loc}</span> Â· <Mail size={10} />{booking.clientEmail || "â€”"}</div>
+          <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1"><Clock size={10} /> {(() => { const s = booking.slotStartUtc || booking.slot_start_utc || booking.start || booking.start_time || ""; if (!s) return "—"; const d = new Date(s + (s.endsWith("Z") ? "" : "Z")); return d.toLocaleString("en-US", { timeZone: "UTC", hour: "numeric", minute: "2-digit", hour12: true }); })()} · 30 min</div>
+          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2"><MapPin size={10} /><span>{loc}</span> · <Mail size={10} />{booking.clientEmail || "â€”"}</div>
           <div className="text-xs text-slate-500 mt-0.5">{booking.eventType || "Booking"}</div>
         </div>
       </div>

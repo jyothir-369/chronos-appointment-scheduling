@@ -22,19 +22,10 @@ export async function apiFetch(path: string, opts?: RequestInit & { idempotencyK
 
     if (response.status === 401 && path !== "/auth/login" && !retried) {
       retried = true;
-      // Explicit bootstrap: only one retry; never recursively call /auth/login
-      const loginResponse = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({}),
-      });
-
-      if (loginResponse.ok) {
-        response = await buildRequest();
-      } else {
-        throw new Error("Authentication required");
-      }
+      // SAFE FIX (Part 7): do not silently authenticate as arbitrary client.
+      // Previous behavior called /auth/login with empty body, selecting oldest client.
+      // That is removed. Client must explicitly provide credentials.
+      throw new Error("Authentication required");
     }
 
     return response;

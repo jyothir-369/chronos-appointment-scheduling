@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module.js';
 import { BillingController } from './billing.controller.js';
 
-@Module({ controllers: [BillingController], providers: [] })
+@Module({ imports: [AuthModule], controllers: [BillingController], providers: [] })
 export class BillingModule {}

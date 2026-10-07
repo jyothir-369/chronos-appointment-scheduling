@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 import React from "react";
 import { LayoutDashboard, Mail, ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = React.useState("sarah@chronos.app");
+  const [email, setEmail] = React.useState("client@example.com");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
             {error && <div className="text-xs font-medium text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</div>}
 
             <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-md shadow-brand-500/20 transition disabled:opacity-60">
-              {loading ? "Signing in…" : <>Sign In <ArrowRight size={16} /></>}
+              {loading ? "Signing inâ€¦" : <>Sign In <ArrowRight size={16} /></>}
             </button>
           </form>
 
@@ -62,3 +62,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -1,6 +1,7 @@
 import { Pool } from 'pg';
 /* Reschedule endpoint */
 import { clock, subtractElapsed } from '@chronos/time';
+import { ReminderQueueManager } from '../reminders/reminder.queue.js';
 import { ActivityService } from '../activity/activity.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 
@@ -23,7 +24,8 @@ export interface RescheduleResult {
 export async function rescheduleBooking(
   pool: any,
   req: RescheduleRequest,
-  nowUtc?: string
+  nowUtc?: string,
+  reminderQueue?: ReminderQueueManager
 ): Promise<RescheduleResult> {
   const effectiveNow = nowUtc || clock.now().toString();
 
@@ -109,11 +111,13 @@ export async function rescheduleBooking(
       }
 
       await client.query('COMMIT');
+      if (reminderQueue) { try { await reminderQueue.cancelForBooking(req.bookingId); } catch {} }
       try {
         const svc = { act: new ActivityService(), not: new NotificationsService() };
         await svc.act.create({ action: 'BOOKING_RESCHEDULED', bookingId: newBookingId, clientId: bLock.client_id, providerId: newSlotRes.rows[0].provider_id, metadata: JSON.stringify({ oldSlotId: bLock.slot_id, newSlotId: req.newSlotId }) });
         await svc.not.create({ type: 'BOOKING_RESCHEDULED', bookingId: newBookingId, clientId: bLock.client_id, providerId: newSlotRes.rows[0].provider_id, title: 'Booking rescheduled', message: 'Your appointment has been moved.' });
       } catch (e: any) { /* event failure non-blocking */ }
+      if (reminderQueue) { try { const ns = await pool.query('SELECT slot_start_utc FROM slots WHERE id = $1', [req.newSlotId]); if (ns.rowCount > 0) { const rr = await pool.query('SELECT offset_minutes FROM reminder_jobs WHERE booking_id = $1 AND status = $2', [newBookingId, 'scheduled']); const offsets = rr.rows.map((r: any) => r.offset_minutes); if (offsets.length > 0) await reminderQueue.enqueueForBooking(newBookingId, ns.rows[0].slot_start_utc, offsets, new Date()); } } catch {} }
       return { status: 201, bookingId: newBookingId };
     } catch (e: any) {
       await client.query('ROLLBACK').catch(() => {});

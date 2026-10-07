@@ -1,0 +1,10 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { EmailGateway } from './email.gateway.js';
+
+@Module({
+  imports: [ConfigModule],
+  providers: [EmailGateway],
+  exports: [EmailGateway],
+})
+export class EmailModule {}

@@ -1,4 +1,5 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Request, UnauthorizedException } from '@nestjs/common';
+import { ProviderAuthGuard } from '../auth/provider-auth.guard.js';
 import { PrismaClient } from '@prisma/client';
 
 @Controller('analytics')
@@ -6,12 +7,17 @@ export class AnalyticsController {
   private readonly prisma = new PrismaClient();
 
   @Get()
+  @UseGuards(ProviderAuthGuard)
   async getAnalytics(
+    @Request() req: any,
     @Query('start') start?: string,
     @Query('end') end?: string,
   ) {
+    const providerId = req.provider?.id;
+    if (!providerId) throw new UnauthorizedException('Provider session required');
+
     try {
-      const where: any = {};
+      const where: any = { slot: { providerId } };
       if (start || end) {
         where.createdAt = {};
         if (start) where.createdAt.gte = new Date(start);
@@ -54,13 +60,12 @@ export class AnalyticsController {
         })),
       };
     } catch (e: any) {
-      // Zero-state safe response on any runtime error
       return {
         range: { start: start || null, end: end || null },
         totals: { total: 0, completed: 0, cancelled: 0, noShow: 0, booked: 0 },
         rates: { completionRate: 0, cancellationRate: 0, utilization: 0 },
         bookings: [],
-        error: 'Analytics unavailable (zero-state)' // internal only; frontend should handle
+        error: 'Analytics unavailable (zero-state)'
       };
     }
   }

@@ -124,14 +124,33 @@ export function generateSlots({
       const endRes = resolveWallClock(`${d.toString()}T${endTimeStr}:00`, tz, 'compatible');
       const startInst = T.Instant.from(startRes.instant);
       const endInst = T.Instant.from(endRes.instant);
-      let current = startInst;
-      while (current.epochMilliseconds < endInst.epochMilliseconds) {
-        const currentStr = current.toString();
-        const next = current.add(T.Duration.from({ minutes: slotMinutes }));
-        const nextStr = next.toString();
-        if (next.epochMilliseconds > endInst.epochMilliseconds) break;
-        slots.push({ startUtc: currentStr, endUtc: nextStr });
-        current = next;
+      // Iterate by local wall-clock slot intervals, not UTC instant arithmetic,
+      // so DST transitions (spring-forward gap / fall-back overlap) resolve correctly.
+      const startZdt = T.ZonedDateTime.from({
+        year: yyyy, month: mm, day: dd, hour: parseInt(startTimeStr.split(':')[0], 10), minute: parseInt(startTimeStr.split(':')[1] || '0', 10), second: 0, timeZone: tz, disambiguation: 'compatible',
+      });
+      const endZdt = T.ZonedDateTime.from({
+        year: yyyy, month: mm, day: dd, hour: parseInt(endTimeStr.split(':')[0], 10), minute: parseInt(endTimeStr.split(':')[1] || '0', 10), second: 0, timeZone: tz, disambiguation: 'compatible',
+      });
+      // Build slots by advancing local minute intervals
+      let currentLocalMin = parseInt(startTimeStr.split(':')[0], 10) * 60 + parseInt(startTimeStr.split(':')[1] || '0', 10);
+      const endLocalMin = parseInt(endTimeStr.split(':')[0], 10) * 60 + parseInt(endTimeStr.split(':')[1] || '0', 10);
+      while (currentLocalMin < endLocalMin) {
+        const nextLocalMin = currentLocalMin + slotMinutes;
+        if (nextLocalMin > endLocalMin) break;
+        // Resolve current and next local wall-clock times to UTC
+        const currentSlotStr = `${String(Math.floor(currentLocalMin / 60)).padStart(2, '0')}:${String(currentLocalMin % 60).padStart(2, '0')}`;
+        const nextSlotStr = `${String(Math.floor(nextLocalMin / 60)).padStart(2, '0')}:${String(nextLocalMin % 60).padStart(2, '0')}`;
+        const currentSlotRes = resolveWallClock(`${d.toString()}T${currentSlotStr}:00`, tz, 'compatible');
+        const nextSlotRes = resolveWallClock(`${d.toString()}T${nextSlotStr}:00`, tz, 'compatible');
+        const currentSlotInst = T.Instant.from(currentSlotRes.instant);
+        const nextSlotInst = T.Instant.from(nextSlotRes.instant);
+        // Skip non-existent gap times (spring forward) by ensuring current and next resolve to valid times
+        // Only include if both current and next exist and are ordered correctly
+        if (currentSlotInst.epochMilliseconds < nextSlotInst.epochMilliseconds) {
+          slots.push({ startUtc: currentSlotInst.toString(), endUtc: nextSlotInst.toString() });
+        }
+        currentLocalMin = nextLocalMin;
       }
     }
     if (d.equals(to)) break;

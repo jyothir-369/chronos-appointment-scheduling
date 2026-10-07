@@ -16,12 +16,19 @@ export default function NewAppointmentForm() {
   const [email, setEmail] = useState('');
   const [dateRaw, setDateRaw] = useState('');
   const [timeRaw, setTimeRaw] = useState('');
+  const [timezone, setTimezone] = useState('UTC');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    function onOpen() { setOpen(true); setError(''); setSuccess(''); }
+    function onOpen() {
+      setOpen(true); setError(''); setSuccess('');
+      fetch('http://localhost:3001/providers/me', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then((p: any) => { if (p?.timezone) setTimezone(p.timezone); })
+        .catch(() => {});
+    }
     window.addEventListener('open-new-appointment', onOpen);
     return () => window.removeEventListener('open-new-appointment', onOpen);
   }, []);
@@ -43,8 +50,22 @@ export default function NewAppointmentForm() {
       const slotRes = await fetch('http://localhost:3001/slots', { credentials: 'include' });
       const slots = slotRes.ok ? await slotRes.json() : [];
       const targetSlot = Array.isArray(slots) ? slots.find((s: any) => {
-        const sDate = new Date(s.slot_start_utc || s.slotStartUtc);
-        return sDate.getUTCFullYear() === d!.getUTCFullYear() && sDate.getUTCMonth() === d!.getUTCMonth() && sDate.getUTCDate() === d!.getUTCDate();
+        const sStart = s.slot_start_utc || s.slotStartUtc;
+        const sStatus = s.status || s.slot_status;
+        if (!sStart || sStatus !== 'open') return false;
+        const dSlot = new Date(sStart + (sStart.endsWith('Z') ? '' : 'Z'));
+        const dReq = new Date(Date.UTC(d!.getUTCFullYear(), d!.getUTCMonth(), d!.getUTCDate(),
+          parseInt(timeRaw.split(':')[0]||'0',10), parseInt(timeRaw.split(':')[1]||'0',10)));
+        // Compare in selected timezone using Intl.DateTimeFormat for year/month/day/hour/minute
+        const fmt = (date: Date) => ({
+          y: new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric' }).format(date),
+          m: new Intl.DateTimeFormat('en-US', { timeZone: timezone, month: 'numeric' }).format(date),
+          d: new Intl.DateTimeFormat('en-US', { timeZone: timezone, day: 'numeric' }).format(date),
+          h: new Intl.DateTimeFormat('en-US', { timeZone: timezone, hour: 'numeric', hour12: false }).format(date),
+          min: new Intl.DateTimeFormat('en-US', { timeZone: timezone, minute: 'numeric' }).format(date),
+        });
+        const sF = fmt(dSlot); const rF = fmt(dReq);
+        return sF.y === rF.y && sF.m === rF.m && sF.d === rF.d && sF.h === rF.h && sF.min === rF.min;
       }) : null;
       if (!targetSlot) { setError('No available slot found for that date/time. Try a different time or check provider availability.'); setSubmitting(false); return; }
 
@@ -53,11 +74,10 @@ export default function NewAppointmentForm() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          client_name: name,
-          client_email: email,
           slot_id: targetSlot.id || targetSlot.slot_id,
-          event_type_id: 'default',
-          client_timezone: 'UTC',
+          email: email,
+          client_name: name,
+          client_timezone: timezone,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -100,6 +120,15 @@ export default function NewAppointmentForm() {
               <label htmlFor="time" className="block text-xs font-semibold text-slate-400 mb-1">Time (HH:MM)</label>
               <input id="time" type="text" value={timeRaw} onChange={e => setTimeRaw(e.target.value)} placeholder="11:00" className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-sm focus:outline-none focus:border-indigo-500" />
             </div>
+          </div>
+          <div>
+            <label htmlFor="tz" className="block text-xs font-semibold text-slate-400 mb-1">Timezone</label>
+            <select id="tz" value={timezone} onChange={e => setTimezone(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-sm focus:outline-none focus:border-indigo-500 text-white">
+              <option value="UTC">UTC</option>
+              <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+            </select>
           </div>
           {error && <div className="text-xs text-rose-300">{error}</div>}
           {success && <div className="text-xs text-emerald-300">{success}</div>}

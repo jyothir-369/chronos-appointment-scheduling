@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
+import { apiFetch } from "../../lib/api";
 import { AppShell } from "../components/AppShell";
+import { useEffect } from "react";
 import { Globe, Trash2 } from "lucide-react";
 
 const DAYS = [
@@ -39,12 +41,21 @@ export default function AvailabilityPage() {
   const [notice, setNotice] = React.useState("4");
   const [toasted, setToasted] = React.useState(false);
 
+  useEffect(() => {
+    apiFetch('/providers/me').then(r => r.ok ? r.json() : null).then(d => { if (d && d.minimumBookingNotice !== undefined) setNotice(String(d.minimumBookingNotice)); if (d && d.minimum_booking_notice !== undefined && d.minimumBookingNotice === undefined) setNotice(String(d.minimum_booking_notice)); }).catch(() => {});
+  }, []);
+
   const toggleDay = (i: number) => setSchedule((prev) => prev.map((s, idx) => idx === i ? { ...s, active: !s.active } : s));
   const addSlot = (i: number) => setSchedule((prev) => prev.map((s, idx) => idx === i ? { ...s, slots: [...s.slots, { start: "09:00", end: "17:00" }] } : s));
   const removeSlot = (i: number, si: number) => setSchedule((prev) => prev.map((s, idx) => idx === i ? { ...s, slots: s.slots.filter((_, j) => j !== si) } : s));
   const setSlot = (i: number, si: number, field: "start" | "end", value: string) => setSchedule((prev) => prev.map((s, idx) => idx === i ? { ...s, slots: s.slots.map((slot, j) => j === si ? { ...slot, [field]: value } : slot) } : s));
 
-  const handleSave = () => { setToasted(true); setTimeout(() => setToasted(false), 2000); };
+  const handleSave = async () => {
+    try {
+      const res = await apiFetch('/providers/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minimumBookingNotice: Number(notice) || 4 }) });
+      if (res.ok) { setToasted(true); setTimeout(() => setToasted(false), 2000); } else { alert('Save failed'); }
+    } catch { alert('Save failed'); }
+  };
 
   return (
     <AppShell>
