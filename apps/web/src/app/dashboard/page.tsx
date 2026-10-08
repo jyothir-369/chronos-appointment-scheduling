@@ -27,6 +27,8 @@ export default function DashboardPage() {
   const [formError, setFormError] = React.useState("");
   const [toast, setToast] = React.useState("");
   const [slots, setSlots] = React.useState<any[]>([]);
+  const [activities, setActivities] = React.useState<any[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = React.useState(false);
 
   React.useEffect(() => {
     setLoading(true); setError("");

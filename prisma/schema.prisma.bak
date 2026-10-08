@@ -38,32 +38,16 @@ model Provider {
   slug                    String   @unique
   cancellationWindowHours Int @map("cancellation_window_hours")
   minimumBookingNotice Int @default(4) @map("minimum_booking_notice")
-  email                 String?  @unique @map("email")
-  passwordHash          String?  @map("password_hash")
-  createdAt             DateTime @default(now()) @map("created_at")
+  createdAt               DateTime @default(now()) @map("created_at")
   updatedAt               DateTime @updatedAt @map("updated_at")
 
   availabilityRules AvailabilityRule[]
   slots             Slot[]
   bookings          Booking[]
   eventTypes        EventType[]
-  sessions          ProviderSession[]
 
   @@index([slug])
   @@map("providers")
-}
-
-model ProviderSession {
-  id         String   @id @default(uuid())
-  providerId String   @map("provider_id")
-  tokenHash  String   @map("token_hash")
-  expiresAt  DateTime @map("expires_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
-
-  @@index([providerId])
-  @@map("provider_sessions")
 }
 
 model AvailabilityRule {
@@ -76,7 +60,6 @@ model AvailabilityRule {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
-  @@unique([providerId, dayOfWeek, startTime, endTime])
 
   @@index([providerId, dayOfWeek])
   @@map("availability_rules")
@@ -130,15 +113,14 @@ model Booking {
 }
 
 model Client {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  name           String?
-  company        String?
-  phone          String?
-  avatarUrl      String?  @map("avatar_url")
-  remindersOptOut Boolean @default(false) @map("reminders_opt_out")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  company   String?
+  phone     String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   bookings Booking[]
 
@@ -231,32 +213,4 @@ model Notification {
   @@index([clientId])
   @@index([read])
   @@map("notifications")
-}
-
-
-
-
-model Admin {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  passwordHash    String?   @map("password_hash")
-  name            String?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-
-  sessions AdminSession[]
-
-  @@map("admins")
-}
-
-model AdminSession {
-  id         String    @id @default(uuid())
-  adminId    String    @map("admin_id")
-  tokenHash  String    @map("token_hash")
-  expiresAt  DateTime  @map("expires_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  admin      Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
-
-  @@index([tokenHash])
-  @@map("admin_sessions")
 }
