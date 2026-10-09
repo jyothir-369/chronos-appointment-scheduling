@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ReminderQueueManager } from './reminder.queue.js';
 import { ReminderWorker } from './reminder.worker.js';
+import { MaterializeQueue } from '../materialize/materialize.queue.js';
 import { reminderDbProvider } from './reminder.db.js';
 import { EmailGateway } from '../email/email.gateway.js';
 
@@ -15,9 +16,11 @@ import { EmailGateway } from '../email/email.gateway.js';
       },
     }),
     BullModule.registerQueue({ name: 'reminders' }),
+    BullModule.registerQueue({ name: 'materialize' }),
   ],
   providers: [
     reminderDbProvider,
+    MaterializeQueue,
     ReminderQueueManager,
     ReminderWorker,
     EmailGateway,

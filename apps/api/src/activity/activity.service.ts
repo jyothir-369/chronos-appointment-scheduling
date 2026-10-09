@@ -17,6 +17,11 @@ export class ActivityService {
     return prisma.activity.findMany({ where: { providerId }, orderBy: { createdAt: 'desc' }, take: 50 });
   }
   async listByClient(clientId: string) {
-    return prisma.activity.findMany({ where: { clientId }, orderBy: { createdAt: 'desc' }, take: 50 });
+    if (!clientId || typeof clientId !== 'string') return [];
+    try {
+      return await prisma.activity.findMany({ where: { clientId }, orderBy: { createdAt: 'desc' }, take: 50 });
+    } catch {
+      return [];
+    }
   }
 }

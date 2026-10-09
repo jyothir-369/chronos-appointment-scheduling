@@ -27,7 +27,7 @@ export class MaterializerService {
   private readonly horizonDays = 60;
 
   /** Default slot length when provider does not specify. */
-  private readonly defaultSlotMinutes = 30;
+  private readonly defaultSlotMinutes = 60;
 
   async materialize(providerId?: string) {
     const stats = {
@@ -87,37 +87,18 @@ export class MaterializerService {
           slots.push(...generated);
         }
 
-        // Idempotent upsert: one transactional batch insert with DO NOTHING
-        // against the UNIQUE(provider_id, slot_start_utc) constraint.
-        // Bookings that reference a slot are protected by the slot's
-        // UNIQUE(provider_id, slot_start_utc) — we only create new slots;
-        // existing slots keep their current status (open / booked / blocked).
-        for (const s of slots) {
-          try {
-            const existing = await this.prisma.slot.findUnique({
-              where: {
-                providerId_slotStartUtc: {
-                  providerId: p.id,
-                  slotStartUtc: new Date(s.startUtc),
-                },
-              },
-            });
-            if (existing) {
-              stats.slotsSkipped += 1;
-              continue;
-            }
-            await this.prisma.$executeRaw`INSERT INTO slots (provider_id, slot_start_utc, slot_end_utc, status, display_tz) VALUES (${p.id}, ${new Date(s.startUtc)}, ${new Date(s.endUtc)}, 'open', ${p.timezone || 'UTC'}) ON CONFLICT DO NOTHING`;
-            stats.slotsCreated += 1;
-          } catch (e: any) {
-            // P2002 = unique constraint violation (already present — concurrent run)
-            if (e.code === 'P2002') stats.slotsSkipped += 1;
-            else {
-              stats.errors += 1;
-              this.logger.error(
-                `Materializer insert failed for provider ${p.id} at ${s.startUtc}: ${e.message}`,
-              );
-            }
-          }
+        const batch = slots.map(s => ({
+          providerId: p.id,
+          slotStartUtc: new Date(s.startUtc),
+          slotEndUtc: new Date(s.endUtc),
+          status: 'open' as const,
+          displayTz: p.timezone || 'UTC',
+        }));
+        try {
+          await this.prisma.$executeRawUnsafe(`INSERT INTO slots (provider_id, slot_start_utc, slot_end_utc, status, display_tz) SELECT * FROM UNNEST(${JSON.stringify(batch.map(b=>({p:b.providerId,s:b.slotStartUtc.toISOString(),e:b.slotEndUtc.toISOString(),t:b.status,d:b.displayTz})))}::jsonb) AS t(p text, s text, e text, t text, d text) ON CONFLICT (provider_id, slot_start_utc) DO NOTHING`);
+          stats.slotsCreated += batch.length;
+        } catch (e: any) {
+          if (e.code === 'P2002') stats.slotsSkipped += batch.length; else stats.errors += batch.length;
         }
       }
       this.logger.log(`Materialize completed: ${JSON.stringify(stats)}`);

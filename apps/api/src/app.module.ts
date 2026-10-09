@@ -16,6 +16,7 @@ import { BillingModule } from './billing/billing.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { SearchModule } from './search/search.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { SlotsModule } from './slots/slots.module.js';
 import { EmailModule } from './email/email.module.js';
@@ -49,6 +50,7 @@ dotenv.config({ path: path.resolve('apps/api/.env') });
     BillingModule,
     AppointmentsModule,
     ActivityModule,
+    AdminModule,
     SearchModule,
     DashboardModule,
     SlotsModule,

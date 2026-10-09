@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { apiFetch } from "../../lib/api";
 import { AppShell } from "../components/AppShell";
 import { Badge } from "../components/Badge";
 import { EmptyState, LoadingState } from "../components/States";
@@ -54,23 +55,23 @@ export default function AppointmentsPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const [drawerError, setDrawerError] = React.useState("");
   const handleAction = async (action: string, item: any, extra?: any) => {
+    setDrawerError("");
     try {
-      const res = await fetch(`/api/appointments/${item.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, ...extra, ifMatch: item.version }),
-        credentials: "include",
-      });
-      const result = await res.json();
-      if (res.ok && result.success !== false) {
-        fetchAppointments();
-        closeDrawer();
-      } else {
-        alert(result.error || "Action failed");
-      }
+      let path = "";
+      if (action === "confirm") path = `/bookings/${item.id || item.booking_id}/confirm`;
+      else if (action === "decline") path = `/bookings/${item.id || item.booking_id}/decline`;
+      else if (action === "cancel") path = `/bookings/${item.id || item.booking_id}/cancel`;
+      else path = `/bookings/${item.id || item.booking_id}/status`;
+      const method = (action === "reschedule") ? "PATCH" : "POST";
+      const body = (action === "reschedule") ? JSON.stringify({ newSlotId: extra?.newSlotId }) : undefined;
+      const res = await apiFetch(path, { method, body, headers: { "Content-Type": "application/json" } });
+      const result = await res.json().catch(() => ({}));
+      if (res.ok) { fetchAppointments(); closeDrawer(); }
+      else { setDrawerError(result.error || "Action failed (HTTP " + res.status + ")"); }
     } catch (e: any) {
-      alert(e?.message || "Action failed");
+      setDrawerError(e?.message || "Action failed");
     }
   };
 
@@ -230,13 +231,14 @@ export default function AppointmentsPage() {
                 <div><strong className="text-slate-500 dark:text-slate-400">Notes:</strong> <div>{drawerItem?.notes || "—"}</div></div>
                 <div><strong className="text-slate-500 dark:text-slate-400">Status:</strong> <div><span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${statusColor(drawerItem?.status)}`}>{displayStatus(drawerItem?.status)}</span></div></div>
 
+                <div className="pt-2">{drawerError && <div className="text-rose-300 text-xs font-semibold bg-rose-900/30 border border-rose-700 rounded px-3 py-2">{drawerError}</div>}</div>
                 <div className="pt-4 flex flex-wrap gap-2">
                   {drawerItem?.status === "confirmed" || drawerItem?.status === "booked" ? (
                     <>
                       <button onClick={() => handleAction("confirm", drawerItem)} className="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">Confirm</button>
                       <button onClick={() => handleAction("decline", drawerItem)} className="px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">Decline</button>
                       <button onClick={() => handleAction("cancel", drawerItem)} className="px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition">Cancel</button>
-                      <button onClick={() => alert("Reschedule requires slot selection — select available slot then submit (backend PATCH /appointments/:id/reschedule with newSlotId). Currently placeholder.")} className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition">Reschedule</button>
+                      <button onClick={() => setDrawerError("Reschedule requires slot selection — select available slot then submit (backend PATCH /bookings/:id/reschedule with newSlotId).")} className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition">Reschedule</button>
                     </>
                   ) : drawerItem?.status === "pending" ? (
                     <>

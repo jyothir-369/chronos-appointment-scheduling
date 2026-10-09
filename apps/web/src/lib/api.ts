@@ -28,6 +28,7 @@ export async function apiFetch(path: string, opts?: RequestInit & { idempotencyK
       throw new Error("Authentication required");
     }
 
+    if (!response.ok) { const text = await response.text(); throw new Error(`HTTP ${response.status}: ${text}`); }
     return response;
   } catch (err: any) {
     if (err?.message === "Authentication required") {
